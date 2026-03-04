@@ -1,0 +1,16 @@
+# Binaries
+server/server
+*.exe
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Dependencies
+node_modules/
