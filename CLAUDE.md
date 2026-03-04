@@ -84,6 +84,18 @@ Part A (注册与结算) ◀─── 无外部依赖，可最先开发
 | `GET /auth/me` | JWT | 人类用户 |
 | `POST/GET/DELETE /api-keys/*` | JWT | 人类用户管理 Key |
 
+## 开发约束
+
+### 调用他人 API 前必须同步代码
+
+涉及调用其他 Part 的 API 或依赖其他 Part 的代码时（如 Part B 调用 Part A 的 registry 方法，Part C 调用后端 API），**必须先拉取远程最新代码**：
+
+```bash
+git pull origin master
+```
+
+确认本地代码是最新的之后，再进行开发。避免基于过时的接口定义开发导致联调冲突。
+
 ## 项目结构
 
 ```
