@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/google/uuid"
@@ -15,6 +16,59 @@ import (
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/registry"
 )
 
+// lastReadKey returns the Redis key for tracking read position.
+// Value is an RFC3339Nano timestamp of the last message read.
+func lastReadKey(clawID, sessionID uuid.UUID) string {
+	return fmt.Sprintf("last_read:%s:%s", clawID.String(), sessionID.String())
+}
+
+// getLastRead retrieves the last-read timestamp from Redis.
+// Returns zero time if no cursor exists.
+func getLastRead(ctx context.Context, clawID, sessionID uuid.UUID) time.Time {
+	val, err := cache.RDB.Get(ctx, lastReadKey(clawID, sessionID)).Result()
+	if err != nil {
+		return time.Time{}
+	}
+	t, err := time.Parse(time.RFC3339Nano, val)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+// setLastRead updates the last-read cursor in Redis.
+func setLastRead(ctx context.Context, clawID, sessionID uuid.UUID, t time.Time) {
+	cache.RDB.Set(ctx, lastReadKey(clawID, sessionID), t.Format(time.RFC3339Nano), 0)
+}
+
+// countUnread returns the number of unread messages for a claw in a session.
+// Excludes messages sent by the claw itself (fix #8).
+func countUnread(clawID, sessionID uuid.UUID, lastRead time.Time) int64 {
+	query := database.DB.Model(&model.Message{}).
+		Where("session_id = ? AND sender_id != ?", sessionID, clawID)
+	if !lastRead.IsZero() {
+		query = query.Where("created_at > ?", lastRead)
+	}
+	var count int64
+	query.Count(&count)
+	return count
+}
+
+// resolveMyClawID gets the caller's claw ID from context (X-Claw-ID header).
+// Falls back to querying the first claw owned by the user.
+func resolveMyClawID(c *app.RequestContext) (uuid.UUID, bool) {
+	if clawID, ok := middleware.GetClawID(c); ok {
+		return clawID, true
+	}
+	// Fallback: find first claw owned by user
+	userID, _ := middleware.GetUserID(c)
+	var claw model.Claw
+	if err := database.DB.Where("owner_id = ?", userID).First(&claw).Error; err != nil {
+		return uuid.Nil, false
+	}
+	return claw.ID, true
+}
+
 // --- Session ---
 
 type CreateSessionReq struct {
@@ -23,7 +77,11 @@ type CreateSessionReq struct {
 }
 
 func CreateSession(ctx context.Context, c *app.RequestContext) {
-	userID, _ := middleware.GetUserID(c)
+	myClawID, ok := resolveMyClawID(c)
+	if !ok {
+		response.ErrBadRequest(ctx, c, "you must register a claw first, or set X-Claw-ID header")
+		return
+	}
 
 	var req CreateSessionReq
 	if err := c.BindAndValidate(&req); err != nil {
@@ -48,16 +106,14 @@ func CreateSession(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Find caller's claw (the first one owned by this user)
-	var myClaw model.Claw
-	if err := database.DB.Where("owner_id = ?", userID).First(&myClaw).Error; err != nil {
-		response.ErrBadRequest(ctx, c, "you must register a claw first")
+	if myClawID == targetID {
+		response.ErrBadRequest(ctx, c, "cannot create session with yourself")
 		return
 	}
 
 	// Create session
 	session := model.Session{
-		ClawAID:    myClaw.ID,
+		ClawAID:    myClawID,
 		ClawBID:    targetID,
 		Status:     "chatting",
 		SourceType: "discovery",
@@ -67,18 +123,14 @@ func CreateSession(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Create initial message if provided
+	// Create initial message if provided (no Redis INCR — cursor model handles unread)
 	if req.InitialMessage != "" {
 		msg := model.Message{
 			SessionID: session.ID,
-			SenderID:  myClaw.ID,
+			SenderID:  myClawID,
 			Content:   req.InitialMessage,
 		}
 		database.DB.Create(&msg)
-
-		// Set unread for target claw
-		unreadKey := fmt.Sprintf("unread:%s:%s", targetID.String(), session.ID.String())
-		cache.RDB.Incr(ctx, unreadKey)
 	}
 
 	// Load relations for response
@@ -136,21 +188,30 @@ func ListSessions(ctx context.Context, c *app.RequestContext) {
 		query = query.Where("status = ?", status)
 	}
 
-	// Filter by has_unread: only return sessions with unread messages
+	// Filter by has_unread: use cursor model to find sessions with unread messages
 	hasUnread := c.DefaultQuery("has_unread", "")
-	var unreadSessionIDs []string
 	if hasUnread == "true" {
-		for _, clawID := range myClawIDs {
-			pattern := fmt.Sprintf("unread:%s:*", clawID.String())
-			keys, _ := cache.RDB.Keys(ctx, pattern).Result()
-			for _, key := range keys {
-				count, _ := cache.RDB.Get(ctx, key).Int64()
-				if count > 0 {
-					sessionIDStr := key[len(fmt.Sprintf("unread:%s:", clawID.String())):]
-					unreadSessionIDs = append(unreadSessionIDs, sessionIDStr)
+		var candidateSessions []model.Session
+		candidateQuery := database.DB.Model(&model.Session{}).
+			Where("claw_a_id IN ? OR claw_b_id IN ?", myClawIDs, myClawIDs)
+		if status != "" {
+			candidateQuery = candidateQuery.Where("status = ?", status)
+		}
+		candidateQuery.Find(&candidateSessions)
+
+		var unreadSessionIDs []uuid.UUID
+		for _, sess := range candidateSessions {
+			for _, myClawID := range myClawIDs {
+				if sess.ClawAID == myClawID || sess.ClawBID == myClawID {
+					lastRead := getLastRead(ctx, myClawID, sess.ID)
+					if countUnread(myClawID, sess.ID, lastRead) > 0 {
+						unreadSessionIDs = append(unreadSessionIDs, sess.ID)
+					}
+					break
 				}
 			}
 		}
+
 		if len(unreadSessionIDs) == 0 {
 			response.SuccessPage(ctx, c, []model.Session{}, 0, page, pageSize)
 			return
@@ -236,18 +297,24 @@ func SendMessage(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Verify caller is a participant
+	// Verify caller is a participant and determine sender claw
 	var senderClawID uuid.UUID
-	var receiverClawID uuid.UUID
 	if session.ClawA.OwnerID == userID {
 		senderClawID = session.ClawAID
-		receiverClawID = session.ClawBID
 	} else if session.ClawB.OwnerID == userID {
 		senderClawID = session.ClawBID
-		receiverClawID = session.ClawAID
 	} else {
 		response.ErrForbidden(ctx, c, "access denied")
 		return
+	}
+
+	// If X-Claw-ID is set, verify it matches a participant claw
+	if clawID, ok := middleware.GetClawID(c); ok {
+		if clawID != session.ClawAID && clawID != session.ClawBID {
+			response.ErrForbidden(ctx, c, "X-Claw-ID is not a participant of this session")
+			return
+		}
+		senderClawID = clawID
 	}
 
 	if session.Status == "closed" {
@@ -268,9 +335,8 @@ func SendMessage(ctx context.Context, c *app.RequestContext) {
 	// Update session updated_at
 	database.DB.Model(&session).Update("updated_at", msg.CreatedAt)
 
-	// Increment unread for receiver
-	unreadKey := fmt.Sprintf("unread:%s:%s", receiverClawID.String(), session.ID.String())
-	cache.RDB.Incr(ctx, unreadKey)
+	// No Redis INCR — cursor model: unread is computed by comparing
+	// last_read cursor vs message timestamps
 
 	response.Success(ctx, c, msg)
 }
@@ -299,30 +365,44 @@ func GetMessages(ctx context.Context, c *app.RequestContext) {
 
 	query := database.DB.Where("session_id = ?", sessionID)
 	if after != "" {
-		// Find the created_at of the "after" message
+		// Fix #7: validate after message belongs to this session
 		var afterMsg model.Message
-		if err := database.DB.First(&afterMsg, "id = ?", after).Error; err == nil {
-			query = query.Where("created_at > ?", afterMsg.CreatedAt)
+		if err := database.DB.First(&afterMsg, "id = ? AND session_id = ?", after, sessionID).Error; err != nil {
+			response.ErrBadRequest(ctx, c, "invalid after cursor: message not found in this session")
+			return
 		}
+		query = query.Where("created_at > ?", afterMsg.CreatedAt)
 	}
 
 	var messages []model.Message
-	query.Order("created_at ASC").Limit(limit + 1).Find(&messages)
+	if err := query.Order("created_at ASC").Limit(limit + 1).Find(&messages).Error; err != nil {
+		response.ErrInternal(ctx, c, "failed to fetch messages")
+		return
+	}
 
 	hasMore := len(messages) > limit
 	if hasMore {
 		messages = messages[:limit]
 	}
 
-	// Clear unread for the reader's claw
-	var myClawID uuid.UUID
-	if session.ClawA.OwnerID == userID {
-		myClawID = session.ClawAID
-	} else {
-		myClawID = session.ClawBID
+	// Update last_read cursor for the reader's claw
+	if len(messages) > 0 {
+		var myClawID uuid.UUID
+		if clawID, ok := middleware.GetClawID(c); ok {
+			myClawID = clawID
+		} else if session.ClawA.OwnerID == userID {
+			myClawID = session.ClawAID
+		} else {
+			myClawID = session.ClawBID
+		}
+
+		lastMsgTime := messages[len(messages)-1].CreatedAt
+		currentLastRead := getLastRead(ctx, myClawID, session.ID)
+		// Only advance the cursor forward, never backwards
+		if currentLastRead.IsZero() || lastMsgTime.After(currentLastRead) {
+			setLastRead(ctx, myClawID, session.ID, lastMsgTime)
+		}
 	}
-	unreadKey := fmt.Sprintf("unread:%s:%s", myClawID.String(), session.ID.String())
-	cache.RDB.Del(ctx, unreadKey)
 
 	type messagesResp struct {
 		Items   []model.Message `json:"items"`
@@ -355,26 +435,21 @@ func CheckUnread(ctx context.Context, c *app.RequestContext) {
 	var unreadSessions []UnreadSession
 
 	for _, claw := range myClaws {
-		// Scan Redis for unread keys matching this claw
-		pattern := fmt.Sprintf("unread:%s:*", claw.ID.String())
-		keys, _ := cache.RDB.Keys(ctx, pattern).Result()
+		// Find all active sessions this claw participates in
+		var sessions []model.Session
+		database.DB.Preload("ClawA").Preload("ClawB").
+			Where("(claw_a_id = ? OR claw_b_id = ?) AND status NOT IN ?",
+				claw.ID, claw.ID, []string{"closed", "completed"}).
+			Find(&sessions)
 
-		for _, key := range keys {
-			count, _ := cache.RDB.Get(ctx, key).Int64()
-			if count <= 0 {
+		for _, session := range sessions {
+			lastRead := getLastRead(ctx, claw.ID, session.ID)
+			unread := countUnread(claw.ID, session.ID, lastRead)
+			if unread <= 0 {
 				continue
 			}
 
-			// Extract session_id from key
-			// key format: unread:{claw_id}:{session_id}
-			sessionIDStr := key[len(fmt.Sprintf("unread:%s:", claw.ID.String())):]
-
-			var session model.Session
-			if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", sessionIDStr).Error; err != nil {
-				continue
-			}
-
-			// Determine who sent the message
+			// Determine who sent the unread messages (the other party)
 			var fromClaw model.Claw
 			if session.ClawAID == claw.ID {
 				fromClaw = session.ClawB
@@ -382,9 +457,12 @@ func CheckUnread(ctx context.Context, c *app.RequestContext) {
 				fromClaw = session.ClawA
 			}
 
-			// Get last message
+			// Get last message from the other party
 			var lastMsg model.Message
-			database.DB.Where("session_id = ?", sessionIDStr).Order("created_at DESC").First(&lastMsg)
+			if err := database.DB.Where("session_id = ? AND sender_id != ?", session.ID, claw.ID).
+				Order("created_at DESC").First(&lastMsg).Error; err != nil {
+				continue
+			}
 
 			preview := lastMsg.Content
 			if len(preview) > 100 {
@@ -392,12 +470,12 @@ func CheckUnread(ctx context.Context, c *app.RequestContext) {
 			}
 
 			unreadSessions = append(unreadSessions, UnreadSession{
-				SessionID: sessionIDStr,
+				SessionID: session.ID.String(),
 				FromClaw: map[string]string{
 					"id":   fromClaw.ID.String(),
 					"name": fromClaw.Name,
 				},
-				UnreadCount:        count,
+				UnreadCount:        unread,
 				LastMessagePreview: preview,
 				LastMessageAt:      lastMsg.CreatedAt.Format("2006-01-02T15:04:05Z"),
 			})

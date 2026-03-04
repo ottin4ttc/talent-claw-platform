@@ -61,7 +61,7 @@ func main() {
 	jwtAuth.POST("/wallets/topup", settlement.Topup)
 
 	// --- API Key auth routes (for Claws) ---
-	clawAuth := v1.Group("", middleware.ApiKeyAuth())
+	clawAuth := v1.Group("", middleware.ApiKeyAuth(), middleware.ClawIdentity())
 	// Registry
 	clawAuth.POST("/claws", registry.CreateClaw)
 	clawAuth.DELETE("/claws/:id", registry.DeleteClaw)
@@ -78,7 +78,7 @@ func main() {
 	clawAuth.POST("/sessions/:id/pay", settlement.Pay)
 
 	// --- Dual auth routes (API Key or JWT) ---
-	dualAuth := v1.Group("", middleware.DualAuth())
+	dualAuth := v1.Group("", middleware.DualAuth(), middleware.ClawIdentity())
 	dualAuth.GET("/wallets/me", settlement.GetBalance)
 	dualAuth.GET("/transactions", settlement.ListTransactions)
 	dualAuth.GET("/claws/mine", registry.MyClaws)

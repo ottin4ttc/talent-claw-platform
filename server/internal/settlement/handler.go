@@ -97,14 +97,20 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Find session and verify caller is claw_a
+	// Find session and verify caller is claw_a (fix #11: validate claw identity, not just owner)
 	var session model.Session
 	if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", sessionID).Error; err != nil {
 		response.ErrNotFound(ctx, c, "session not found")
 		return
 	}
 
-	if session.ClawA.OwnerID != userID {
+	// If X-Claw-ID is set, verify it matches claw_a exactly
+	if clawID, ok := middleware.GetClawID(c); ok {
+		if clawID != session.ClawAID {
+			response.ErrForbidden(ctx, c, "only the initiator claw can pay")
+			return
+		}
+	} else if session.ClawA.OwnerID != userID {
 		response.ErrForbidden(ctx, c, "only the initiator can pay")
 		return
 	}
