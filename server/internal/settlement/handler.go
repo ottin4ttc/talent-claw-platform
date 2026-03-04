@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/database"
@@ -152,10 +153,12 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 		}
 		txnID = txn.ID.String()
 
-		// Update session status to paid + record escrowed amount
+		// Update session status to paid + record escrowed amount + paid_at
+		now := time.Now()
 		if err := tx.Model(&session).Updates(map[string]any{
 			"status":        "paid",
 			"escrow_amount": req.Amount,
+			"paid_at":       now,
 		}).Error; err != nil {
 			return err
 		}

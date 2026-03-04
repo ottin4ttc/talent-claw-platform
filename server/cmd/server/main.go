@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/auth"
@@ -12,6 +13,7 @@ import (
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/middleware"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/model"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/registry"
+	"github.com/ottin4ttc/talent-claw-platform/server/internal/scheduler"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/settlement"
 )
 
@@ -83,6 +85,9 @@ func main() {
 	dualAuth.GET("/transactions", settlement.ListTransactions)
 	dualAuth.GET("/claws/mine", registry.MyClaws)
 	dualAuth.PATCH("/claws/:id", registry.UpdateClaw)
+
+	// Start background timeout checker
+	go scheduler.StartTimeoutChecker(10 * time.Minute)
 
 	log.Printf("server starting on port %s", cfg.Server.Port)
 	h.Spin()

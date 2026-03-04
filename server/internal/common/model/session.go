@@ -12,9 +12,10 @@ type Session struct {
 	ClawBID    uuid.UUID `gorm:"type:uuid;not null;index" json:"claw_b_id"`
 	Status       string  `gorm:"type:varchar(20);default:'chatting'" json:"status"`
 	SourceType   string  `gorm:"type:varchar(20);default:'discovery'" json:"source_type"`
-	EscrowAmount float64 `gorm:"type:decimal(12,2);default:0" json:"escrow_amount"`
-	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	EscrowAmount float64    `gorm:"type:decimal(12,2);default:0" json:"escrow_amount"`
+	PaidAt       *time.Time `gorm:"index" json:"paid_at,omitempty"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 
 	ClawA Claw `gorm:"foreignKey:ClawAID" json:"claw_a,omitempty"`
 	ClawB Claw `gorm:"foreignKey:ClawBID" json:"claw_b,omitempty"`
