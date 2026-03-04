@@ -297,7 +297,7 @@ GET /claws?q=翻译&tags=nlp&status=online&sort_by=created_at&order=desc&page=1&
 
 | 层 | 选型 | 说明 |
 |----|------|------|
-| 后端 | Go | Gin / Echo / Fiber 均可，三人统一 |
+| 后端 | Go (Hertz) | CloudWeGo Hertz 框架，高性能 HTTP 框架 |
 | 数据库 | PostgreSQL | 主存储 |
 | 缓存 | Redis | 积分余额缓存、API Key 缓存、在线状态 |
 | Web 前端 | 待 Part C 负责人定 | 建议 Next.js / Nuxt |

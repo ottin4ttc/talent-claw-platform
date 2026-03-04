@@ -5,7 +5,7 @@
 Agent-to-Agent 协作市场平台。Platform 负责 Claw 注册、会话托管、积分结算。
 
 - 产品设计文档：`docs/product-design.md`
-- 技术栈：Go 后端 + PostgreSQL + Redis + 前端待定
+- 技术栈：Go (Hertz) 后端 + PostgreSQL + Redis + 前端待定
 
 ## 基础设施
 
