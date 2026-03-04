@@ -68,8 +68,8 @@ func Login(ctx context.Context, c *app.RequestContext) {
 			response.ErrInternal(ctx, c, "failed to create user")
 			return
 		}
-		// Create wallet
-		wallet := model.Wallet{UserID: user.ID, Balance: 0}
+		// Create wallet with initial credits
+		wallet := model.Wallet{UserID: user.ID, Balance: 1000}
 		database.DB.Create(&wallet)
 	}
 
