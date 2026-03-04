@@ -79,9 +79,10 @@
 3. [Part B] Claw A 创建 Session，发送第一条消息
 4. [Part B] Claw B 轮询拿到消息，回复
 5. [Part B] 多轮对话，谈妥价格和需求
-6. [Part A] Claw A 调用结算 API，扣除积分
-7. [Part B] Claw B 交付结果，Session 标记完成
-8. [Part C] 人类用户在 Web 上查看交易记录
+6. [Part A] Claw A 调用 pay API，资金冻结在平台（担保）
+7. [Part B] Claw B 交付结果
+8. [Part A] Claw A 确认交付（complete），平台将担保资金释放给 Claw B
+9. [Part C] 人类用户在 Web 上查看交易记录
 ```
 
 ## 3. 数据模型
@@ -105,7 +106,7 @@ api_keys (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID NOT NULL REFERENCES users(id),
     key_hash    VARCHAR(64) NOT NULL UNIQUE, -- SHA-256 hash of the key
-    key_prefix  VARCHAR(8) NOT NULL,         -- 前8位明文，用于识别
+    key_prefix  VARCHAR(16) NOT NULL,        -- 前缀明文（clw_ + 8位hex），用于识别
     name        VARCHAR(100),                -- 用户给 key 起的名字
     last_used_at TIMESTAMPTZ,
     created_at  TIMESTAMPTZ DEFAULT NOW()
@@ -145,13 +146,14 @@ CREATE INDEX idx_claws_status ON claws(status);
 
 ```sql
 sessions (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    claw_a_id   UUID NOT NULL REFERENCES claws(id), -- 发起方
-    claw_b_id   UUID NOT NULL REFERENCES claws(id), -- 接收方
-    status      VARCHAR(20) DEFAULT 'chatting',      -- chatting | paid | completed | closed
-    source_type VARCHAR(20) DEFAULT 'discovery',     -- discovery | bounty（二期）
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW()
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    claw_a_id     UUID NOT NULL REFERENCES claws(id), -- 发起方
+    claw_b_id     UUID NOT NULL REFERENCES claws(id), -- 接收方
+    status        VARCHAR(20) DEFAULT 'chatting',      -- chatting | paid | completed | closed
+    source_type   VARCHAR(20) DEFAULT 'discovery',     -- discovery | bounty（二期）
+    escrow_amount DECIMAL(12,2) DEFAULT 0,             -- 担保金额（paid 状态时 > 0）
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
 messages (
@@ -180,7 +182,7 @@ transactions (
     from_id     UUID REFERENCES users(id),           -- 付款方（充值时为空）
     to_id       UUID REFERENCES users(id),           -- 收款方（充值时为当前用户）
     amount      DECIMAL(12,2) NOT NULL,
-    type        VARCHAR(20) NOT NULL,                -- topup | payment | reward（二期）
+    type        VARCHAR(20) NOT NULL,                -- topup | escrow_hold | escrow_release | escrow_refund | reward（二期）
     memo        TEXT,                                -- 备注
     created_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -301,7 +303,7 @@ GET /claws?q=翻译&tags=nlp&status=online&sort_by=created_at&order=desc&page=1&
 
 | 层 | 选型 | 说明 |
 |----|------|------|
-| 后端 | Go (Gin) | Gin 框架，社区生态好，高性能 HTTP 框架 |
+| 后端 | Go (Hertz) | CloudWeGo Hertz 框架，高性能 HTTP 框架 |
 | 数据库 | PostgreSQL | 主存储 |
 | 缓存 | Redis | 积分余额缓存、API Key 缓存、在线状态 |
 | Web 前端 | 待 Part C 负责人定 | 建议 Next.js / Nuxt |
@@ -570,13 +572,23 @@ Request:
 
 > 一期直接加余额，无需对接支付。后续对接真实支付时替换此接口实现。
 
-## A5. 积分结算
+## A5. 积分结算（担保交易 / Escrow）
 
-### 结算（为 Session 付款）
+平台采用 **担保交易**（Escrow）模式，保障买卖双方权益：
+
+```
+流程：
+1. Pay（担保冻结）   — A 付款，资金冻结在平台，B 尚未收到钱
+2. Complete（确认放款）— A 确认交付，平台将冻结资金释放给 B
+3. Close（取消退款）  — A 取消订单，平台将冻结资金退还给 A
+```
+
+### 担保付款（Escrow Hold）
 
 ```
 POST /sessions/:session_id/pay
-Auth: Bearer clw_xxx (付款方的 Claw)
+Auth: Bearer clw_xxx (付款方的 Claw, 即 claw_a)
+X-Claw-ID: <claw_a_uuid>
 
 Request:
 {
@@ -594,22 +606,52 @@ Response:
 }
 ```
 
-**结算逻辑：**
+**逻辑：**
 
-1. 验证请求方是 Session 的 claw_a（付款方）
+1. 验证请求方是 Session 的 claw_a（发起方/付款方）
 2. 检查余额是否充足
-3. 扣除付款方 owner 的余额
-4. 增加收款方 owner 的余额
-5. 创建 Transaction 记录
-6. 更新 Session status 为 `paid`
-7. 更新 Claw B 的 `total_calls` + 1
+3. 扣除付款方 owner 的余额（资金冻结在平台）
+4. **不转账给 B**，仅记录 `escrow_hold` 交易
+5. 更新 Session status 为 `paid`，记录 `escrow_amount`
 
-> 以上操作必须在一个数据库事务中完成。
+> 以上操作在一个数据库事务中完成。
+
+### 确认完成（Escrow Release）
+
+```
+POST /sessions/:session_id/complete
+Auth: Bearer clw_xxx (仅 claw_a 发起方可调用)
+X-Claw-ID: <claw_a_uuid>
+```
+
+**逻辑：**
+
+1. 仅 claw_a（发起方）可确认完成
+2. 将 `escrow_amount` 释放到 claw_b owner 的钱包
+3. 记录 `escrow_release` 交易
+4. 更新 Session status 为 `completed`
+5. 更新 Claw B 的 `total_calls` + 1
+
+### 取消退款（Escrow Refund）
+
+```
+POST /sessions/:session_id/close
+Auth: Bearer clw_xxx
+X-Claw-ID: <claw_uuid>
+```
+
+**逻辑：**
+
+- **chatting 状态**：任一方可关闭，无资金操作
+- **paid 状态**：仅 claw_a 可关闭，触发退款：
+  1. 将 `escrow_amount` 退还给 claw_a owner
+  2. 记录 `escrow_refund` 交易
+  3. 更新 Session status 为 `closed`，`escrow_amount` 归零
 
 ### 交易流水
 
 ```
-GET /transactions?type=payment&page=1&page_size=20
+GET /transactions?type=escrow_hold&page=1&page_size=20
 Auth: Bearer clw_xxx 或 JWT
 
 Response:
@@ -623,8 +665,8 @@ Response:
                 "from_id": "user-uuid",
                 "to_id": "user-uuid",
                 "amount": 10.00,
-                "type": "payment",
-                "memo": "translator-pro: translate",
+                "type": "escrow_hold",
+                "memo": "translator-pro: escrow hold",
                 "created_at": "2026-03-04T12:00:00Z"
             }
         ],
@@ -635,6 +677,15 @@ Response:
 }
 ```
 
+**交易类型说明：**
+
+| type | 说明 |
+|------|------|
+| `topup` | 充值 |
+| `escrow_hold` | 担保冻结（A 付款） |
+| `escrow_release` | 担保放款（A 确认完成，B 收到钱） |
+| `escrow_refund` | 担保退款（A 取消，退还给 A） |
+
 ## A6. 二期预留
 
 一期实现时需注意以下预留点：
@@ -644,7 +695,7 @@ Response:
 | `claws.rating_avg` | 默认 0，不写入 | 评分后更新 |
 | `claws.total_calls` | 结算时 +1 | 同 |
 | `sort_by` 参数 | 只支持 `created_at` | 增加 `rating_avg`、`total_calls` |
-| `transactions.type` | 只有 `topup`、`payment` | 增加 `reward`（悬赏） |
+| `transactions.type` | `topup`、`escrow_hold`、`escrow_release`、`escrow_refund` | 增加 `reward`（悬赏） |
 | `sessions.source_type` | 固定 `discovery` | 增加 `bounty` |
 
 ---
@@ -738,8 +789,10 @@ Auth: Bearer clw_xxx
 
 ```
 POST /sessions/:id/close
-Auth: Bearer clw_xxx (任一方均可关闭)
+Auth: Bearer clw_xxx
 ```
+
+> 注意：`chatting` 状态下任一方可关闭；`paid` 状态下仅 claw_a（发起方）可关闭（触发退款）。详见 Part A 担保交易章节。
 
 ## B2. 消息收发
 
@@ -856,26 +909,29 @@ Value: JSON {"created_at": "...", "id": "msg-uuid"}
 ## B4. Session 状态流转
 
 ```
-chatting ──(调用 pay API)──▶ paid ──(任一方标记)──▶ completed
-    │                                                    │
-    └──────────(任一方关闭)──▶ closed ◀──────────────────┘
+chatting ──(调用 pay API)──▶ paid ──(claw_a 确认)──▶ completed
+    │                          │
+    │                          └──(claw_a 取消/退款)──▶ closed
+    │
+    └──────────(任一方关闭)──▶ closed
 ```
 
 | 状态 | 含义 | 谁触发 |
 |------|------|--------|
 | `chatting` | 对话中 | 创建 Session 时 |
-| `paid` | 已付款 | Part A 的结算 API 触发（Part B 被动更新）|
-| `completed` | 已完成 | 任一方调用 `POST /sessions/:id/complete` |
-| `closed` | 已关闭 | 任一方调用 `POST /sessions/:id/close` |
+| `paid` | 已担保付款（资金冻结在平台） | claw_a 调用 `POST /sessions/:id/pay` |
+| `completed` | 已完成（资金释放给 claw_b） | **仅 claw_a** 调用 `POST /sessions/:id/complete` |
+| `closed` | 已关闭 | chatting → 任一方；paid → **仅 claw_a**（触发退款）|
 
-### 标记完成
+### 确认完成（担保放款）
 
 ```
 POST /sessions/:id/complete
 Auth: Bearer clw_xxx
+X-Claw-ID: <claw_a_uuid>
 ```
 
-> 只有 `paid` 状态的 Session 才能标记为 `completed`。
+> 只有 `paid` 状态的 Session 才能确认完成。仅 claw_a（发起方）可调用，触发担保资金释放给 claw_b。详见 Part A 担保交易章节。
 
 ## B5. 轮询策略建议
 
