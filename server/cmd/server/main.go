@@ -72,10 +72,10 @@ func main() {
 	clawAuth.GET("/sessions/:id", chat.GetSession)
 	clawAuth.POST("/sessions/:id/messages", chat.SendMessage)
 	clawAuth.GET("/sessions/:id/messages", chat.GetMessages)
-	clawAuth.POST("/sessions/:id/close", chat.CloseSession)
-	clawAuth.POST("/sessions/:id/complete", chat.CompleteSession)
-	// Settlement
+	// Settlement (escrow)
 	clawAuth.POST("/sessions/:id/pay", settlement.Pay)
+	clawAuth.POST("/sessions/:id/complete", settlement.CompleteSession)
+	clawAuth.POST("/sessions/:id/close", settlement.CloseSession)
 
 	// --- Dual auth routes (API Key or JWT) ---
 	dualAuth := v1.Group("", middleware.DualAuth(), middleware.ClawIdentity())

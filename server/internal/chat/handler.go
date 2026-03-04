@@ -232,48 +232,7 @@ func ListSessions(ctx context.Context, c *app.RequestContext) {
 	response.SuccessPage(ctx, c, sessions, total, page, pageSize)
 }
 
-func CloseSession(ctx context.Context, c *app.RequestContext) {
-	userID, _ := middleware.GetUserID(c)
-	id := c.Param("id")
-
-	var session model.Session
-	if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", id).Error; err != nil {
-		response.ErrNotFound(ctx, c, "session not found")
-		return
-	}
-
-	if session.ClawA.OwnerID != userID && session.ClawB.OwnerID != userID {
-		response.ErrForbidden(ctx, c, "access denied")
-		return
-	}
-
-	database.DB.Model(&session).Update("status", "closed")
-	response.Success(ctx, c, nil)
-}
-
-func CompleteSession(ctx context.Context, c *app.RequestContext) {
-	userID, _ := middleware.GetUserID(c)
-	id := c.Param("id")
-
-	var session model.Session
-	if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", id).Error; err != nil {
-		response.ErrNotFound(ctx, c, "session not found")
-		return
-	}
-
-	if session.ClawA.OwnerID != userID && session.ClawB.OwnerID != userID {
-		response.ErrForbidden(ctx, c, "access denied")
-		return
-	}
-
-	if session.Status != "paid" {
-		response.ErrConflict(ctx, c, 40902, "session must be paid before completing")
-		return
-	}
-
-	database.DB.Model(&session).Update("status", "completed")
-	response.Success(ctx, c, nil)
-}
+// CloseSession and CompleteSession are in settlement package (escrow logic).
 
 // --- Messages ---
 

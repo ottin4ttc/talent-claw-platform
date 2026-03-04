@@ -120,8 +120,6 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	providerOwnerID := session.ClawB.OwnerID
-
 	var txnID string
 
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
@@ -135,26 +133,18 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 			return fmt.Errorf("insufficient balance")
 		}
 
-		// Deduct from payer
+		// Deduct from payer — escrow: money held by platform, NOT credited to provider yet
 		if err := tx.Model(&payerWallet).Update("balance", gorm.Expr("balance - ?", req.Amount)).Error; err != nil {
 			return err
 		}
 
-		// Add to provider
-		var providerWallet model.Wallet
-		tx.FirstOrCreate(&providerWallet, model.Wallet{UserID: providerOwnerID})
-		if err := tx.Model(&providerWallet).Update("balance", gorm.Expr("balance + ?", req.Amount)).Error; err != nil {
-			return err
-		}
-
-		// Record transaction
-		memo := fmt.Sprintf("%s: payment", session.ClawB.Name)
+		// Record escrow_hold transaction
+		memo := fmt.Sprintf("%s: escrow hold", session.ClawB.Name)
 		txn := model.Transaction{
 			SessionID: &session.ID,
 			FromID:    &userID,
-			ToID:      &providerOwnerID,
 			Amount:    req.Amount,
-			Type:      "payment",
+			Type:      "escrow_hold",
 			Memo:      &memo,
 		}
 		if err := tx.Create(&txn).Error; err != nil {
@@ -162,13 +152,11 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 		}
 		txnID = txn.ID.String()
 
-		// Update session status to paid
-		if err := tx.Model(&session).Update("status", "paid").Error; err != nil {
-			return err
-		}
-
-		// Increment total_calls for provider claw
-		if err := tx.Model(&model.Claw{}).Where("id = ?", session.ClawBID).Update("total_calls", gorm.Expr("total_calls + 1")).Error; err != nil {
+		// Update session status to paid + record escrowed amount
+		if err := tx.Model(&session).Updates(map[string]any{
+			"status":        "paid",
+			"escrow_amount": req.Amount,
+		}).Error; err != nil {
 			return err
 		}
 
@@ -193,6 +181,161 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 		FromBalance:   wallet.Balance,
 		Amount:        req.Amount,
 	})
+}
+
+// --- Complete (escrow release) ---
+
+// CompleteSession is called by the initiator (claw_a) to confirm delivery.
+// Releases escrowed funds to the provider (claw_b).
+func CompleteSession(ctx context.Context, c *app.RequestContext) {
+	userID, _ := middleware.GetUserID(c)
+	sessionID := c.Param("id")
+
+	var session model.Session
+	if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", sessionID).Error; err != nil {
+		response.ErrNotFound(ctx, c, "session not found")
+		return
+	}
+
+	// Only the initiator (claw_a owner) can confirm completion
+	if clawID, ok := middleware.GetClawID(c); ok {
+		if clawID != session.ClawAID {
+			response.ErrForbidden(ctx, c, "only the initiator can confirm completion")
+			return
+		}
+	} else if session.ClawA.OwnerID != userID {
+		response.ErrForbidden(ctx, c, "only the initiator can confirm completion")
+		return
+	}
+
+	if session.Status != "paid" {
+		response.ErrConflict(ctx, c, 40902, "session must be paid before completing")
+		return
+	}
+
+	providerOwnerID := session.ClawB.OwnerID
+
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		// Release escrowed funds to provider
+		var providerWallet model.Wallet
+		tx.FirstOrCreate(&providerWallet, model.Wallet{UserID: providerOwnerID})
+		if err := tx.Model(&providerWallet).Update("balance", gorm.Expr("balance + ?", session.EscrowAmount)).Error; err != nil {
+			return err
+		}
+
+		// Record escrow_release transaction
+		memo := fmt.Sprintf("%s: escrow release", session.ClawB.Name)
+		txn := model.Transaction{
+			SessionID: &session.ID,
+			FromID:    &userID,
+			ToID:      &providerOwnerID,
+			Amount:    session.EscrowAmount,
+			Type:      "escrow_release",
+			Memo:      &memo,
+		}
+		if err := tx.Create(&txn).Error; err != nil {
+			return err
+		}
+
+		// Update session status
+		if err := tx.Model(&session).Update("status", "completed").Error; err != nil {
+			return err
+		}
+
+		// Increment total_calls for provider claw
+		if err := tx.Model(&model.Claw{}).Where("id = ?", session.ClawBID).
+			Update("total_calls", gorm.Expr("total_calls + 1")).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		response.ErrInternal(ctx, c, "failed to complete session")
+		return
+	}
+
+	response.Success(ctx, c, nil)
+}
+
+// --- Close / Refund ---
+
+// CloseSession closes a session. If escrow funds are held (status=paid),
+// refunds to the initiator (claw_a).
+func CloseSession(ctx context.Context, c *app.RequestContext) {
+	userID, _ := middleware.GetUserID(c)
+	sessionID := c.Param("id")
+
+	var session model.Session
+	if err := database.DB.Preload("ClawA").Preload("ClawB").First(&session, "id = ?", sessionID).Error; err != nil {
+		response.ErrNotFound(ctx, c, "session not found")
+		return
+	}
+
+	// Verify caller is a participant
+	if session.ClawA.OwnerID != userID && session.ClawB.OwnerID != userID {
+		response.ErrForbidden(ctx, c, "access denied")
+		return
+	}
+
+	if session.Status == "closed" || session.Status == "completed" {
+		response.ErrConflict(ctx, c, 40902, "session already closed or completed")
+		return
+	}
+
+	// If paid, only the initiator can close (triggers refund)
+	if session.Status == "paid" {
+		if clawID, ok := middleware.GetClawID(c); ok {
+			if clawID != session.ClawAID {
+				response.ErrForbidden(ctx, c, "only the initiator can cancel a paid session")
+				return
+			}
+		} else if session.ClawA.OwnerID != userID {
+			response.ErrForbidden(ctx, c, "only the initiator can cancel a paid session")
+			return
+		}
+
+		// Refund escrowed funds
+		err := database.DB.Transaction(func(tx *gorm.DB) error {
+			var payerWallet model.Wallet
+			if err := tx.First(&payerWallet, "user_id = ?", userID).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&payerWallet).Update("balance", gorm.Expr("balance + ?", session.EscrowAmount)).Error; err != nil {
+				return err
+			}
+
+			memo := fmt.Sprintf("%s: escrow refund", session.ClawB.Name)
+			txn := model.Transaction{
+				SessionID: &session.ID,
+				ToID:      &userID,
+				Amount:    session.EscrowAmount,
+				Type:      "escrow_refund",
+				Memo:      &memo,
+			}
+			if err := tx.Create(&txn).Error; err != nil {
+				return err
+			}
+
+			return tx.Model(&session).Updates(map[string]any{
+				"status":        "closed",
+				"escrow_amount": 0,
+			}).Error
+		})
+
+		if err != nil {
+			response.ErrInternal(ctx, c, "failed to refund and close session")
+			return
+		}
+
+		response.Success(ctx, c, nil)
+		return
+	}
+
+	// chatting → closed (no money involved)
+	database.DB.Model(&session).Update("status", "closed")
+	response.Success(ctx, c, nil)
 }
 
 // --- Transactions ---
