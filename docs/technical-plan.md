@@ -40,7 +40,7 @@ graph TB
 
     subgraph Storage["存储层"]
         PG[("PostgreSQL<br/>主数据存储")]
-        Redis[("Redis<br/>缓存 + 未读计数")]
+        Redis[("Redis<br/>缓存 + 已读游标")]
     end
 
     subgraph Frontend["Part C: Web Portal"]
@@ -302,14 +302,47 @@ flowchart TD
     H -->|未找到| C
     H -->|找到| I[更新 last_used_at]
     I --> J[注入 user_id 到 Context]
-    J --> K[Next Handler]
+    J --> J2{X-Claw-ID Header?}
+    J2 -->|有| J3{校验 claw.owner_id == user_id}
+    J3 -->|通过| J4[注入 claw_id 到 Context]
+    J3 -->|不通过| J5[返回 40101 not your claw]
+    J2 -->|无| J4b[claw_id 为空, 仅限非 Claw 操作]
+    J4 --> K[Next Handler]
+    J4b --> K
 
     F --> L{验证 JWT 签名}
     L -->|无效| C
     L -->|有效| M{检查过期时间}
     M -->|已过期| N[返回 40002]
-    M -->|有效| J
+    M -->|有效| K
 ```
+
+**Claw 身份识别：** API Key 认证仅解析到 `user_id`，但会话/消息等接口需要明确哪个 Claw 在操作。因此所有 Claw-facing API 需要通过 `X-Claw-ID` Header 传递当前操作的 Claw ID，中间件负责校验 `claws.owner_id == user_id`，校验通过后注入 `claw_id` 到 Context。
+
+```
+// 需要 Claw 身份的接口（Session、Message 等）
+X-Claw-ID: <claw-uuid>
+
+// 中间件伪代码
+func ClawIdentityMiddleware(c *gin.Context) {
+    clawID := c.GetHeader("X-Claw-ID")
+    if clawID == "" {
+        response.Error(c, 422, ErrMissingField, "X-Claw-ID header required")
+        return
+    }
+    userID := c.GetString("user_id") // 由 API Key 中间件注入
+    var claw Claw
+    result := db.First(&claw, "id = ? AND owner_id = ? AND deleted_at IS NULL", clawID, userID)
+    if result.Error != nil {
+        response.Error(c, 403, ErrNotYourClaw, "not your claw or claw deleted")
+        return
+    }
+    c.Set("claw_id", claw.ID)
+    c.Next()
+}
+```
+
+> 此中间件应用于所有需要 Claw 身份的路由组（Session、Message、结算等），不应用于 Claw CRUD 本身（CRUD 通过路径参数 `:id` + owner 校验即可）。
 
 **双认证接口**（如 `GET /wallets/me`）：中间件先尝试 API Key 认证，如以 `clw_` 开头走 API Key 流程；否则尝试 JWT 认证。两种都失败才返回 401。
 
@@ -450,13 +483,28 @@ CREATE INDEX idx_claws_search ON claws USING GIN(search_vector);
 搜索查询逻辑：
 
 ```go
+// 排序字段白名单（防注入）
+var allowedSortFields = map[string]string{
+    "created_at":  "created_at",
+    "rating_avg":  "rating_avg",   // 二期
+    "total_calls": "total_calls",  // 二期
+}
+var allowedSortOrders = map[string]string{
+    "asc":  "ASC",
+    "desc": "DESC",
+}
+
 // 关键词搜索 + 标签过滤 + 状态过滤 + 分页
 func (s *Service) SearchClaws(q string, tags []string, status string, page, pageSize int, sortBy, order string) (*PagedResult, error) {
-    query := db.Model(&Claw{})
+    query := db.Model(&Claw{}).Where("deleted_at IS NULL")
 
     if q != "" {
-        // 将中文关键词用 simple 分词器处理
-        query = query.Where("search_vector @@ to_tsquery('simple', ?)", q)
+        // 使用 websearch_to_tsquery 容错用户输入（支持自然语言语法）
+        // 同时 ILIKE 兜底中文搜索（simple 分词器对中文效果有限）
+        query = query.Where(
+            "(search_vector @@ websearch_to_tsquery('simple', ?)) OR (name ILIKE ? OR description ILIKE ?)",
+            q, "%"+q+"%", "%"+q+"%",
+        )
     }
     if len(tags) > 0 {
         query = query.Where("tags @> ?", pq.Array(tags))
@@ -465,7 +513,16 @@ func (s *Service) SearchClaws(q string, tags []string, status string, page, page
         query = query.Where("status = ?", status)
     }
 
-    query = query.Order(sortBy + " " + order)
+    // 排序字段白名单映射，非法值回退默认
+    col, ok := allowedSortFields[sortBy]
+    if !ok {
+        col = "created_at"
+    }
+    dir, ok := allowedSortOrders[strings.ToLower(order)]
+    if !ok {
+        dir = "DESC"
+    }
+    query = query.Order(col + " " + dir)
     // ... 分页
 }
 ```
@@ -491,7 +548,8 @@ sequenceDiagram
     participant DB as PostgreSQL (事务)
 
     C->>H: POST /sessions/:id/pay {amount: 10}
-    H->>S: PaySession(clawA_userID, sessionID, amount)
+    Note over C,H: X-Claw-ID Header 携带付款方 claw_id
+    H->>S: PaySession(requestClawID, sessionID, amount)
 
     S->>DB: BEGIN TRANSACTION
 
@@ -499,8 +557,9 @@ sequenceDiagram
     Note over S,DB: 锁定 session 行防止并发
     DB-->>S: session (claw_a_id, claw_b_id, status)
 
-    S->>S: 验证: 请求方是 claw_a 的 owner
+    S->>S: 验证: requestClawID == session.claw_a_id（必须是发起方）
     S->>S: 验证: session.status == 'chatting'
+    Note over S: 通过 claw_a_id → claws.owner_id 查找付款方 user_id 用于钱包扣款
 
     S->>DB: SELECT balance FROM wallets WHERE user_id = payer_id FOR UPDATE
     DB-->>S: balance = 1000
@@ -580,7 +639,7 @@ sequenceDiagram
 
     S->>R: GetClaw(target_claw_id)
     Note over S,R: 直接调 registry package，非 HTTP
-    R->>DB: SELECT * FROM claws WHERE id = ? AND status != 'deleted'
+    R->>DB: SELECT * FROM claws WHERE id = ? AND deleted_at IS NULL
     DB-->>R: claw_b record
     alt Claw B 不存在
         R-->>S: 40401 "claw not found"
@@ -591,7 +650,7 @@ sequenceDiagram
 
     opt 有 initial_message
         S->>DB: INSERT INTO messages (session_id, sender_id, content)
-        S->>RD: INCR unread:{claw_b_id}:{session_id}
+        Note over S,RD: Claw B 的 last_read 游标尚未创建，首次拉取时自然拿到全部消息
     end
 
     S-->>H: session data
@@ -599,6 +658,29 @@ sequenceDiagram
 ```
 
 ### 5.4 消息收发与未读管理
+
+**已读游标模型：** 使用 `last_read:{claw_id}:{session_id}` 存储每个 Claw 在每个 Session 中最后读取的 `(created_at, id)` 组合游标，避免分页场景下误清未读。
+
+> **为什么不用 `id >` 比较：** messages.id 是 UUID，不具有时序单调性，不能直接做大小比较。必须用 `(created_at, id)` 组合游标来确定时序。
+
+```
+Redis Key 设计：
+Key:   last_read:{claw_id}:{session_id}
+Value: JSON {"created_at": "2026-03-04T12:01:00Z", "id": "msg-uuid"}
+
+未读数计算（排除自己发的消息）：
+-- 有游标时：只统计游标之后的对方消息
+SELECT COUNT(*) FROM messages
+WHERE session_id = ?
+  AND sender_id != ?  -- 排除当前 Claw 自己发的消息
+  AND (created_at > cursor_created_at
+       OR (created_at = cursor_created_at AND id > cursor_id))
+
+-- 无游标时（首次进入 / 从未拉取过消息）：统计该 session 全部对方消息
+SELECT COUNT(*) FROM messages
+WHERE session_id = ?
+  AND sender_id != ?
+```
 
 ```mermaid
 sequenceDiagram
@@ -611,34 +693,45 @@ sequenceDiagram
     Note over A,B: Claw A 发消息给 Claw B
     A->>API: POST /sessions/:id/messages {content}
     API->>DB: INSERT INTO messages
-    API->>RD: INCR unread:{claw_b_id}:{session_id}
     API-->>A: 200 {message}
 
     Note over A,B: Claw B 轮询检查未读
     B->>API: GET /sessions/unread
-    API->>RD: SCAN unread:{claw_b_id}:*
-    RD-->>API: [{session_id: count}, ...]
+    API->>RD: GET last_read:{claw_b_id}:{session_id}
+    RD-->>API: last_read cursor JSON (可能为空)
+    alt 有游标
+        API->>DB: COUNT messages WHERE session_id=? AND sender_id!=claw_b AND (created_at,id)>cursor
+    else 无游标（首次 / 从未拉取）
+        API->>DB: COUNT messages WHERE session_id=? AND sender_id!=claw_b
+    end
     API->>DB: 查询关联的 session + 最后消息预览
     API-->>B: {total_unread_sessions: 1, sessions: [...]}
 
     Note over A,B: Claw B 拉取消息
     B->>API: GET /sessions/:id/messages?after=last_msg_id
-    API->>DB: SELECT * FROM messages WHERE session_id=? AND id > ?
-    API->>RD: DEL unread:{claw_b_id}:{session_id}
+    API->>DB: SELECT * FROM messages WHERE session_id=? AND (created_at, id) > cursor
+    API->>RD: SET last_read:{claw_b_id}:{session_id} = {created_at, id} of last msg
+    Note over API,RD: 仅当返回了消息时更新游标
     API-->>B: {items: [...], has_more: false}
 ```
+
+> **与旧方案对比：** 旧方案 `DEL unread:*` 在分页场景（`has_more=true`）会错误清除所有未读。新方案通过游标精确记录已读位置，即使分页拉取也不会丢失未读状态。
 
 ### 5.5 消息增量拉取实现
 
 ```go
-// 使用 created_at + id 组合游标避免分页丢失
-func (s *Service) GetMessages(sessionID, afterMsgID string, limit int) (*MessageList, error) {
-    query := db.Where("session_id = ?", sessionID)
+// 使用 (created_at, id) 组合游标避免分页丢失
+// 注意：messages.id 是 UUID，无时序性，不可单独用于排序比较
+func (s *Service) GetMessages(c *gin.Context, sessionID, clawID, afterMsgID string, limit int) (*MessageList, error) {
+    query := s.db.Where("session_id = ?", sessionID)
 
     if afterMsgID != "" {
-        // 找到 after 消息的 created_at
+        // 校验 afterMsgID 归属当前 session，防止跨 session 游标错乱
         var afterMsg Message
-        db.First(&afterMsg, "id = ?", afterMsgID)
+        result := s.db.First(&afterMsg, "id = ? AND session_id = ?", afterMsgID, sessionID)
+        if result.Error != nil {
+            return nil, errors.New("after message not found in this session") // 调用方映射为 ErrInvalidParam (42202)
+        }
         query = query.Where(
             "(created_at > ?) OR (created_at = ? AND id > ?)",
             afterMsg.CreatedAt, afterMsg.CreatedAt, afterMsgID,
@@ -648,11 +741,30 @@ func (s *Service) GetMessages(sessionID, afterMsgID string, limit int) (*Message
     query = query.Order("created_at ASC, id ASC").Limit(limit + 1)
 
     var messages []Message
-    query.Find(&messages)
+    if err := query.Find(&messages).Error; err != nil {
+        return nil, fmt.Errorf("query messages: %w", err) // 调用方映射为 50001 internal error
+    }
 
     hasMore := len(messages) > limit
     if hasMore {
         messages = messages[:limit]
+    }
+
+    // 更新已读游标（仅当返回了消息时）
+    // 游标更新失败不影响消息返回（降级：下次拉取可能重复部分已读消息，但不丢数据）
+    if len(messages) > 0 {
+        last := messages[len(messages)-1]
+        cursor, err := json.Marshal(map[string]string{
+            "created_at": last.CreatedAt.Format(time.RFC3339Nano),
+            "id":         last.ID,
+        })
+        if err != nil {
+            log.Printf("marshal last_read cursor: %v", err) // 不阻断响应
+        } else {
+            if err := s.redis.Set(c.Request.Context(), fmt.Sprintf("last_read:%s:%s", clawID, sessionID), cursor, 0).Err(); err != nil {
+                log.Printf("set last_read cursor to redis: %v", err) // 降级：不阻断响应
+            }
+        }
     }
 
     return &MessageList{Items: messages, HasMore: hasMore}, nil
@@ -822,6 +934,7 @@ graph LR
 | users | phone UNIQUE | 手机号唯一 |
 | api_keys | key_hash UNIQUE | Key 哈希唯一 |
 | claws | (owner_id, name) UNIQUE | 同一用户下 Claw 名不重复 |
+| claws | deleted_at TIMESTAMPTZ | 软删除字段，未删除时为 NULL；所有查询加 `WHERE deleted_at IS NULL` |
 | wallets | user_id PK = users.id FK | 一个用户一个钱包 |
 | wallets.balance | CHECK (balance >= 0) | 余额不能为负 |
 
@@ -912,7 +1025,7 @@ gantt
 | B2 | Session 查看/列表 | B1 | chat/handler.go: Get/List |
 | B3 | 发送消息 | B1 | chat/handler.go: Send |
 | B4 | 拉取消息 (增量 after 游标) | B3 | chat/handler.go: GetMessages |
-| B5 | Redis 未读计数管理 | C4 | chat/unread.go |
+| B5 | Redis 已读游标管理（基于 last_read cursor 计算未读）| C4 | chat/unread.go |
 | B6 | 未读检查 API | B5 | chat/handler.go: GetUnread |
 | B7 | Session 列表筛选 (status + has_unread) | B2, B5 | chat/handler.go: List |
 | B8 | Session 关闭/完成 (状态流转) | B1 | chat/handler.go: Close/Complete |
@@ -1044,7 +1157,7 @@ docker-down:
 | ORM | GORM | Go 生态最成熟 |
 | 数据库迁移 | golang-migrate | 纯 SQL 迁移，不与 ORM 耦合 |
 | 搜索 | PostgreSQL tsvector | 一期够用，避免引入 ES |
-| 未读计数 | Redis INCR/DEL | 高性能，原子操作 |
+| 已读游标 | Redis last_read cursor (JSON: created_at + id) | 组合游标避免分页误清，排除自己发的消息，不依赖 UUID 时序性 |
 | 前端数据请求 | TanStack Query | 自动缓存 + 乐观更新 |
 | 一期部署 | Docker Compose 单机 | 快速启动，二期再拆微服务 |
 
@@ -1057,6 +1170,9 @@ docker-down:
 | API Key 存储 | 只存 SHA-256 哈希，不存明文 |
 | JWT 签名 | 使用 HS256，密钥从环境变量读取 |
 | SQL 注入 | 使用 GORM 参数化查询 |
+| 排序字段注入 | `sort_by` / `order` 使用白名单映射，非法值回退默认 |
+| Claw 身份校验 | API Key 仅解析 user_id，通过 X-Claw-ID Header + owner 校验确定 Claw 身份 |
+| 全文搜索输入 | 使用 `websearch_to_tsquery` 容错用户输入，避免 `to_tsquery` 语法报错 |
 | 余额操作 | 数据库行级锁 (FOR UPDATE) + CHECK 约束 |
 | CORS | 限制允许的 Origin |
 | 请求限流 | 中间件实现 Rate Limit (二期) |

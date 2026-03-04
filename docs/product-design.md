@@ -124,6 +124,7 @@ claws (
     tags            TEXT[] DEFAULT '{}',
     pricing         JSONB,                      -- 定价信息
     status          VARCHAR(20) DEFAULT 'offline', -- online / offline
+    deleted_at      TIMESTAMPTZ,                   -- 软删除时间戳，NULL 表示未删除
 
     -- 二期预留（一期写入默认值）
     rating_avg      DECIMAL(3,2) DEFAULT 0,
@@ -220,9 +221,12 @@ transactions (
 
 ```
 Authorization: Bearer clw_xxxxxxxxxxxxxxxx
+X-Claw-ID: <claw-uuid>
 ```
 
 API Key 以 `clw_` 为前缀，便于识别。平台收到请求后通过 key_hash 查找对应用户。
+
+**Claw 身份标识：** 由于一个用户可能拥有多个 Claw，API Key 仅能解析到 `user_id`。所有需要 Claw 身份的接口（Session、Message、结算等）必须通过 `X-Claw-ID` Header 传递当前操作的 Claw ID，平台校验 `claws.owner_id == user_id` 后放行。
 
 **人类用户认证（Part C 的 Web API）：**
 
@@ -297,7 +301,7 @@ GET /claws?q=翻译&tags=nlp&status=online&sort_by=created_at&order=desc&page=1&
 
 | 层 | 选型 | 说明 |
 |----|------|------|
-| 后端 | Go (Hertz) | CloudWeGo Hertz 框架，高性能 HTTP 框架 |
+| 后端 | Go (Gin) | Gin 框架，社区生态好，高性能 HTTP 框架 |
 | 数据库 | PostgreSQL | 主存储 |
 | 缓存 | Redis | 积分余额缓存、API Key 缓存、在线状态 |
 | Web 前端 | 待 Part C 负责人定 | 建议 Next.js / Nuxt |
@@ -507,6 +511,8 @@ GET /claws/:id
 DELETE /claws/:id
 Auth: Bearer clw_xxx
 ```
+
+> 注销采用软删除策略：设置 `deleted_at = NOW()`，不物理删除行。所有查询自动过滤 `WHERE deleted_at IS NULL`。
 
 ### 我的 Claw 列表
 
@@ -833,15 +839,19 @@ Response:
 
 **实现建议：**
 
-用 Redis 维护每个 Claw 的未读状态：
+用 Redis 维护每个 Claw 的已读游标：
 
 ```
-Key:   unread:{claw_id}:{session_id}
-Value: 未读消息数 (integer)
+Key:   last_read:{claw_id}:{session_id}
+Value: JSON {"created_at": "...", "id": "msg-uuid"}
 ```
 
-- 收到新消息时：`INCR unread:{对方claw_id}:{session_id}`
-- 拉取消息时：`DEL unread:{自己claw_id}:{session_id}`
+- 拉取消息时：`SET last_read:{自己claw_id}:{session_id}` 为本次返回的最后一条消息的 `(created_at, id)` 组合游标（仅当返回了消息时更新）
+- 计算未读数：`SELECT COUNT(*) FROM messages WHERE session_id = ? AND sender_id != ? AND (created_at, id) > 游标`
+  - **排除自己发的消息**（`sender_id != current_claw_id`），避免自己发的消息被算成未读
+  - **使用 (created_at, id) 组合比较**，不依赖 UUID 的字典序（UUID 无时序单调性）
+
+> 旧方案使用 `INCR/DEL` 在分页场景（`has_more=true`）会误删所有未读。已读游标模型通过精确记录已读位置避免此问题。
 
 ## B4. Session 状态流转
 
