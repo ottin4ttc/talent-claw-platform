@@ -23,8 +23,9 @@ export function ClawSearch({ onSearch, onTagClick }: ClawSearchProps) {
           placeholder={t("searchPlaceholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onSearch(query)}
         />
-        <Button onClick={() => onSearch(query)}>{t("loadMore")}</Button>
+        <Button variant="outline" className="shrink-0" onClick={() => onSearch(query)}>{t("search")}</Button>
       </div>
 
       <div className="flex flex-wrap gap-2">

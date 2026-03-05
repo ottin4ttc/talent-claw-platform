@@ -35,7 +35,7 @@ export default function MarketPage() {
 
       {query.hasNextPage && (
         <div className="mt-8 flex justify-center">
-          <Button onClick={() => query.fetchNextPage()} disabled={query.isFetchingNextPage}>
+          <Button variant="outline" onClick={() => query.fetchNextPage()} disabled={query.isFetchingNextPage}>
             {t("loadMore")}
           </Button>
         </div>
