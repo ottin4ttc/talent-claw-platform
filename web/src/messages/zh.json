@@ -76,7 +76,8 @@
     "negotiable": "协商定价",
     "online": "在线",
     "offline": "离线",
-    "clawApiNotice": "创建和删除 Claw 需通过 API Key"
+    "clawApiNotice": "创建和删除 Claw 需通过 API Key",
+    "transactions": "查看全部交易"
   },
   "transactions": {
     "title": "交易记录",

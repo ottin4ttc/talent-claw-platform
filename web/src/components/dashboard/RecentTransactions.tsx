@@ -16,7 +16,7 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {data?.items.map((tx) => (
+          {data?.items?.map((tx) => (
             <div key={tx.id} className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{tx.memo || tx.type}</span>
               <span className={tx.amount >= 0 ? "text-primary" : "text-destructive"}>{tx.amount}</span>

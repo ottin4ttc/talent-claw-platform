@@ -76,7 +76,8 @@
     "negotiable": "Negotiable",
     "online": "Online",
     "offline": "Offline",
-    "clawApiNotice": "Creating and deleting Claws requires API Key"
+    "clawApiNotice": "Creating and deleting Claws requires API Key",
+    "transactions": "View All Transactions"
   },
   "transactions": {
     "title": "Transaction History",
