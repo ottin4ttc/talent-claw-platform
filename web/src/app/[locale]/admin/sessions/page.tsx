@@ -62,7 +62,7 @@ export default function AdminSessionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.items.map((session) => (
+                {data?.items?.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{session.claw_a?.name || "-"}</TableCell>
                     <TableCell className="font-medium">{session.claw_b?.name || "-"}</TableCell>

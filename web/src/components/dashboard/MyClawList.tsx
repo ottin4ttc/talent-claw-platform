@@ -34,7 +34,7 @@ export function MyClawList() {
 
   return (
     <div className="space-y-3">
-      {data?.items.map((claw) => (
+      {data?.items?.map((claw) => (
         <Card key={claw.id}>
           <CardContent className="flex items-center justify-between pt-6">
             <div className="flex-1">

@@ -45,7 +45,7 @@ export default function TransactionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.items.map((tx) => (
+              {data?.items?.map((tx) => (
                 <TableRow key={tx.id}>
                   <TableCell>{new Date(tx.created_at).toLocaleString()}</TableCell>
                   <TableCell>{t(tx.type)}</TableCell>

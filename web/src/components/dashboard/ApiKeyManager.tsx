@@ -38,7 +38,7 @@ export function ApiKeyManager() {
     <div className="space-y-3">
       <Button onClick={() => setOpenCreate(true)}>{t("createKey")}</Button>
 
-      {data?.items.map((key) => (
+      {data?.items?.map((key) => (
         <Card key={key.id}>
           <CardContent className="flex items-center justify-between pt-6">
             <div className="font-mono text-sm">{key.key_prefix}... · {key.name}</div>
