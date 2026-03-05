@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import { mockApiKeys, mockUser } from "./data/users";
 import { mockClaws } from "./data/claws";
 import { mockTransactions } from "./data/transactions";
+import { mockSessions, mockMessages } from "./data/sessions";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://180.76.244.208:8080/v1";
 
@@ -43,6 +44,9 @@ export const handlers = [
   http.get(`${BASE}/claws`, ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("q")?.toLowerCase();
+    const status = url.searchParams.get("status");
+    const sortBy = url.searchParams.get("sort_by");
+    const order = url.searchParams.get("order") || "desc";
     const page = Number(url.searchParams.get("page") || "1");
     const pageSize = Number(url.searchParams.get("page_size") || "12");
 
@@ -54,6 +58,16 @@ export const handlers = [
           c.description.toLowerCase().includes(q) ||
           c.tags.some((t) => t.toLowerCase().includes(q))
       );
+    }
+    if (status) {
+      filtered = filtered.filter((c) => c.status === status);
+    }
+    if (sortBy) {
+      filtered.sort((a, b) => {
+        const av = (a as unknown as Record<string, unknown>)[sortBy] as number;
+        const bv = (b as unknown as Record<string, unknown>)[sortBy] as number;
+        return order === "asc" ? av - bv : bv - av;
+      });
     }
 
     const start = (page - 1) * pageSize;
@@ -84,18 +98,32 @@ export const handlers = [
 
   http.get(`${BASE}/claws/mine`, ({ request }) => {
     const auth = request.headers.get("Authorization") || "";
-    if (!auth.startsWith("Bearer clw_")) {
+    if (!auth.startsWith("Bearer ")) {
       return HttpResponse.json(
-        { code: 40100, data: null, message: "unauthorized: API Key required" },
+        { code: 40100, data: null, message: "unauthorized" },
         { status: 401 }
       );
     }
 
+    const myClaws = mockClaws.filter((c) => c.owner_id === "user-001");
     return HttpResponse.json({
       code: 0,
-      data: { items: mockClaws.filter((c) => c.owner_id === "user-001"), total: 2, page: 1, page_size: 20 },
+      data: { items: myClaws, total: myClaws.length, page: 1, page_size: 20 },
       message: "ok",
     });
+  }),
+
+  http.patch(`${BASE}/claws/:id`, async ({ params, request }) => {
+    const claw = mockClaws.find((c) => c.id === params.id);
+    if (!claw) {
+      return HttpResponse.json(
+        { code: 40401, data: null, message: "claw not found" },
+        { status: 404 }
+      );
+    }
+    const body = (await request.json()) as Record<string, unknown>;
+    const updated = { ...claw, ...body, updated_at: new Date().toISOString() };
+    return HttpResponse.json({ code: 0, data: updated, message: "ok" });
   }),
 
   ...(() => {
@@ -169,5 +197,49 @@ export const handlers = [
 
   http.delete(`${BASE}/api-keys/:id`, () => {
     return HttpResponse.json({ code: 0, data: null, message: "ok" });
+  }),
+
+  // --- Admin endpoints ---
+  http.get(`${BASE}/admin/sessions`, ({ request }) => {
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status");
+    const page = Number(url.searchParams.get("page") || "1");
+    const pageSize = Number(url.searchParams.get("page_size") || "20");
+
+    let filtered = [...mockSessions];
+    if (status) {
+      filtered = filtered.filter((s) => s.status === status);
+    }
+
+    return HttpResponse.json({
+      code: 0,
+      data: {
+        items: filtered.slice((page - 1) * pageSize, page * pageSize),
+        total: filtered.length,
+        page,
+        page_size: pageSize,
+      },
+      message: "ok",
+    });
+  }),
+
+  http.get(`${BASE}/admin/sessions/:id`, ({ params }) => {
+    const session = mockSessions.find((s) => s.id === params.id);
+    if (!session) {
+      return HttpResponse.json(
+        { code: 40401, data: null, message: "session not found" },
+        { status: 404 }
+      );
+    }
+    return HttpResponse.json({ code: 0, data: session, message: "ok" });
+  }),
+
+  http.get(`${BASE}/admin/sessions/:id/messages`, ({ params }) => {
+    const messages = mockMessages[params.id as string] || [];
+    return HttpResponse.json({
+      code: 0,
+      data: { items: messages, has_more: false },
+      message: "ok",
+    });
   }),
 ];

@@ -4,6 +4,7 @@
     "market": "市场",
     "dashboard": "控制台",
     "transactions": "交易记录",
+    "settings": "设置",
     "login": "登录",
     "logout": "退出",
     "loading": "加载中..."
@@ -16,7 +17,21 @@
     "sendCode": "发送验证码",
     "submit": "登录",
     "invalidPhone": "手机号格式错误",
-    "invalidCode": "验证码必须为 6 位"
+    "invalidCode": "验证码必须为 6 位",
+    "sending": "发送中...",
+    "loggingIn": "登录中...",
+    "back": "返回",
+    "resendCode": "重新发送",
+    "resendCountdown": "重新发送 ({seconds}s)",
+    "sendCodeFailed": "发送验证码失败",
+    "loginFailed": "登录失败，请检查验证码"
+  },
+  "adminLogin": {
+    "title": "管理后台登录",
+    "subtitle": "仅限授权人员",
+    "sendCodeFailed": "发送验证码失败",
+    "loginFailed": "登录失败，请检查验证码",
+    "notAdmin": "该账号无管理员权限"
   },
   "market": {
     "title": "Claw 市场",
@@ -27,7 +42,13 @@
     "creditsPerCall": "积分/次",
     "rating": "评分",
     "search": "搜索",
-    "loadMore": "加载更多"
+    "loadMore": "加载更多",
+    "filterStatus": "状态",
+    "allStatus": "全部",
+    "sortBy": "排序",
+    "newest": "最新",
+    "mostCalls": "最多调用",
+    "highestRating": "最高评分"
   },
   "dashboard": {
     "title": "控制台",
@@ -40,7 +61,20 @@
     "keyCreated": "API Key 已创建",
     "keyWarning": "此 Key 仅显示一次，请立即复制。",
     "backendUpgradeRequired": "此功能需要后端升级，请联系 Part A 负责人。",
-    "credits": "积分"
+    "credits": "积分",
+    "editClaw": "编辑 Claw",
+    "saveClaw": "保存",
+    "clawName": "名称",
+    "clawDescription": "描述",
+    "clawTags": "标签（逗号分隔）",
+    "pricingModel": "定价模式",
+    "pricingAmount": "金额",
+    "pricingDesc": "定价描述",
+    "perCall": "按次计费",
+    "negotiable": "协商定价",
+    "online": "在线",
+    "offline": "离线",
+    "clawApiNotice": "创建和删除 Claw 需通过 API Key"
   },
   "transactions": {
     "title": "交易记录",
@@ -60,5 +94,36 @@
     "customAmount": "自定义金额",
     "confirmTopup": "确认充值",
     "success": "充值成功"
+  },
+  "settings": {
+    "title": "设置",
+    "version": "版本",
+    "author": "作者"
+  },
+  "admin": {
+    "title": "管理后台",
+    "sessions": "会话",
+    "sessionsTitle": "会话管理",
+    "initiator": "发起方",
+    "responder": "响应方",
+    "status": "状态",
+    "escrow": "担保金额",
+    "updatedAt": "更新时间",
+    "createdAt": "创建时间",
+    "chatting": "对话中",
+    "paid": "已付款",
+    "completed": "已完成",
+    "closed": "已关闭",
+    "allStatus": "全部状态",
+    "viewMessages": "查看",
+    "backToList": "返回会话列表",
+    "sessionDetail": "会话详情",
+    "noMessages": "暂无消息",
+    "system": "系统",
+    "delivery": "交付",
+    "revision": "修订",
+    "accessDenied": "需要管理员权限",
+    "prev": "上一页",
+    "next": "下一页"
   }
 }

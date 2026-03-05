@@ -1,6 +1,6 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap, unwrapPaged } from "@/lib/api";
-import type { Claw, ClawSearchParams } from "@/types";
+import type { Claw, ClawSearchParams, UpdateClawRequest } from "@/types";
 
 export function useClawList(params: ClawSearchParams) {
   return useInfiniteQuery({
@@ -36,5 +36,14 @@ export function useMyClaws() {
     queryKey: ["claws", "mine"],
     queryFn: () => unwrapPaged<Claw>(api.get("claws/mine")),
     retry: false,
+  });
+}
+
+export function useUpdateClaw() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateClawRequest }) =>
+      unwrap<Claw>(api.patch(`claws/${id}`, { json: data })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["claws", "mine"] }),
   });
 }

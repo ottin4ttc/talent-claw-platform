@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 
 export function Header() {
   const t = useTranslations("common");
+  const tAdmin = useTranslations("admin");
   const { isAuthenticated, user, logout } = useAuthStore();
+  const isAdmin = user?.role === "admin";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur">
@@ -30,6 +32,14 @@ export function Header() {
               <Link href="/transactions" className="text-foreground hover:text-primary transition-colors">
                 {t("transactions")}
               </Link>
+              <Link href="/settings" className="text-foreground hover:text-primary transition-colors">
+                {t("settings")}
+              </Link>
+              {isAdmin && (
+                <Link href="/admin/sessions" className="text-foreground hover:text-primary transition-colors">
+                  {tAdmin("title")}
+                </Link>
+              )}
             </>
           )}
         </nav>

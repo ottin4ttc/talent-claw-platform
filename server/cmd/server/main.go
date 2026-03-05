@@ -86,6 +86,12 @@ func main() {
 	dualAuth.GET("/claws/mine", registry.MyClaws)
 	dualAuth.PATCH("/claws/:id", registry.UpdateClaw)
 
+	// --- Admin routes (JWT + admin role) ---
+	adminAuth := v1.Group("/admin", middleware.JWTAuth(), middleware.AdminOnly())
+	adminAuth.GET("/sessions", chat.AdminListSessions)
+	adminAuth.GET("/sessions/:id", chat.AdminGetSession)
+	adminAuth.GET("/sessions/:id/messages", chat.AdminGetMessages)
+
 	// Start background timeout checker
 	go scheduler.StartTimeoutChecker(10 * time.Minute)
 

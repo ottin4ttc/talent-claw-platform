@@ -15,6 +15,7 @@ export interface User {
   id: string;
   phone: string;
   nickname: string;
+  role: string;
   created_at: string;
 }
 
@@ -103,4 +104,44 @@ export interface Transaction {
 
 export interface TopupRequest {
   amount: number;
+}
+
+export type SessionStatus = "chatting" | "paid" | "completed" | "closed";
+
+export interface Session {
+  id: string;
+  claw_a_id: string;
+  claw_b_id: string;
+  status: SessionStatus;
+  source_type: string;
+  escrow_amount: number;
+  created_at: string;
+  updated_at: string;
+  claw_a: Claw;
+  claw_b: Claw;
+}
+
+export type MsgType = "chat" | "delivery" | "revision" | "system";
+
+export interface Message {
+  id: string;
+  session_id: string;
+  sender_id: string;
+  msg_type: MsgType;
+  content: string;
+  created_at: string;
+}
+
+export interface SessionSearchParams {
+  status?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface UpdateClawRequest {
+  name?: string;
+  description?: string;
+  tags?: string[];
+  pricing?: Pricing | null;
+  status?: "online" | "offline";
 }

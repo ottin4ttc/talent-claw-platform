@@ -8,6 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/routing";
 import { useLogin, useSendCode } from "@/hooks/useAuth";
+import { useAuthStore } from "@/stores/authStore";
 import { getToken } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,22 +21,24 @@ const loginSchema = z.object({
   code: z.string().length(6),
 });
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const t = useTranslations("login");
+  const tAdmin = useTranslations("adminLogin");
   const router = useRouter();
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const user = useAuthStore((s) => s.user);
 
   const sendCode = useSendCode();
   const login = useLogin();
 
-  // If already logged in, redirect to dashboard
+  // If already logged in as admin, redirect
   useEffect(() => {
-    if (getToken()) {
-      router.replace("/dashboard");
+    if (getToken() && user?.role === "admin") {
+      router.replace("/admin/sessions");
     }
-  }, [router]);
+  }, [user, router]);
 
   // Countdown timer
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function LoginPage() {
       setStep("code");
       setCountdown(60);
     } catch {
-      toast.error(t("sendCodeFailed"));
+      toast.error(tAdmin("sendCodeFailed"));
     }
   });
 
@@ -64,25 +67,29 @@ export default function LoginPage() {
       await sendCode.mutateAsync({ phone });
       setCountdown(60);
     } catch {
-      toast.error(t("sendCodeFailed"));
+      toast.error(tAdmin("sendCodeFailed"));
     }
-  }, [countdown, phone, sendCode, t]);
+  }, [countdown, phone, sendCode, tAdmin]);
 
   const handleLogin = codeForm.handleSubmit(async (data) => {
     try {
-      await login.mutateAsync({ phone, code: data.code });
-      router.push("/dashboard");
+      const resp = await login.mutateAsync({ phone, code: data.code });
+      if (resp.user.role !== "admin") {
+        toast.error(tAdmin("notAdmin"));
+        return;
+      }
+      router.push("/admin/sessions");
     } catch {
-      toast.error(t("loginFailed"));
+      toast.error(tAdmin("loginFailed"));
     }
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 bg-background">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card p-8">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
-          <p className="text-sm text-muted-foreground">{t("loginSubtitle")}</p>
+          <h1 className="text-2xl font-bold">{tAdmin("title")}</h1>
+          <p className="text-sm text-muted-foreground">{tAdmin("subtitle")}</p>
         </div>
 
         {step === "phone" ? (

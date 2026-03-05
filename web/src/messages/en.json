@@ -4,6 +4,7 @@
     "market": "Market",
     "dashboard": "Dashboard",
     "transactions": "Transactions",
+    "settings": "Settings",
     "login": "Login",
     "logout": "Logout",
     "loading": "Loading..."
@@ -16,7 +17,21 @@
     "sendCode": "Send Code",
     "submit": "Sign in",
     "invalidPhone": "Invalid phone number",
-    "invalidCode": "Verification code must be 6 digits"
+    "invalidCode": "Verification code must be 6 digits",
+    "sending": "Sending...",
+    "loggingIn": "Signing in...",
+    "back": "Back",
+    "resendCode": "Resend Code",
+    "resendCountdown": "Resend ({seconds}s)",
+    "sendCodeFailed": "Failed to send code",
+    "loginFailed": "Login failed, please check code"
+  },
+  "adminLogin": {
+    "title": "Admin Login",
+    "subtitle": "Authorized personnel only",
+    "sendCodeFailed": "Failed to send code",
+    "loginFailed": "Login failed, please check code",
+    "notAdmin": "This account does not have admin access"
   },
   "market": {
     "title": "Claw Market",
@@ -27,7 +42,13 @@
     "creditsPerCall": "credits/call",
     "rating": "Rating",
     "search": "Search",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "filterStatus": "Status",
+    "allStatus": "All",
+    "sortBy": "Sort",
+    "newest": "Newest",
+    "mostCalls": "Most Calls",
+    "highestRating": "Highest Rating"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -40,7 +61,20 @@
     "keyCreated": "API Key Created",
     "keyWarning": "This key will only be shown once. Copy it now.",
     "backendUpgradeRequired": "This feature needs backend upgrade. Please contact Part A owner.",
-    "credits": "Credits"
+    "credits": "Credits",
+    "editClaw": "Edit Claw",
+    "saveClaw": "Save",
+    "clawName": "Name",
+    "clawDescription": "Description",
+    "clawTags": "Tags (comma separated)",
+    "pricingModel": "Pricing Model",
+    "pricingAmount": "Amount",
+    "pricingDesc": "Pricing Description",
+    "perCall": "Per Call",
+    "negotiable": "Negotiable",
+    "online": "Online",
+    "offline": "Offline",
+    "clawApiNotice": "Creating and deleting Claws requires API Key"
   },
   "transactions": {
     "title": "Transaction History",
@@ -60,5 +94,36 @@
     "customAmount": "Custom Amount",
     "confirmTopup": "Confirm Top Up",
     "success": "Top up success"
+  },
+  "settings": {
+    "title": "Settings",
+    "version": "Version",
+    "author": "Author"
+  },
+  "admin": {
+    "title": "Admin",
+    "sessions": "Sessions",
+    "sessionsTitle": "Session Management",
+    "initiator": "Initiator",
+    "responder": "Responder",
+    "status": "Status",
+    "escrow": "Escrow",
+    "updatedAt": "Updated",
+    "createdAt": "Created",
+    "chatting": "Chatting",
+    "paid": "Paid",
+    "completed": "Completed",
+    "closed": "Closed",
+    "allStatus": "All Status",
+    "viewMessages": "View",
+    "backToList": "Back to Sessions",
+    "sessionDetail": "Session Detail",
+    "noMessages": "No messages yet",
+    "system": "System",
+    "delivery": "Delivery",
+    "revision": "Revision",
+    "accessDenied": "Admin access required",
+    "prev": "Previous",
+    "next": "Next"
   }
 }

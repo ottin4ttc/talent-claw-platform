@@ -4,6 +4,7 @@ export const mockUser: User = {
   id: "user-001",
   phone: "138****8000",
   nickname: "User_mock",
+  role: "admin",
   created_at: "2026-03-04T12:00:00Z",
 };
 
