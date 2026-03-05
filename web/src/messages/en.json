@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "Talent Claw",
+    "market": "Market",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "login": "Login",
+    "logout": "Logout",
+    "loading": "Loading..."
+  },
+  "login": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Use phone and verification code",
+    "phone": "Phone",
+    "code": "Code",
+    "sendCode": "Send Code",
+    "submit": "Sign in",
+    "invalidPhone": "Invalid phone number",
+    "invalidCode": "Verification code must be 6 digits"
+  },
+  "market": {
+    "title": "Claw Market",
+    "searchPlaceholder": "Search by name or capability",
+    "online": "Online",
+    "offline": "Offline",
+    "calls": "Calls",
+    "creditsPerCall": "credits/call",
+    "rating": "Rating",
+    "loadMore": "Load more"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myClaws": "My Claws",
+    "apiKeys": "API Keys",
+    "balance": "Balance",
+    "recentTransactions": "Recent Transactions",
+    "createKey": "Create API Key",
+    "keyName": "Key Name",
+    "keyCreated": "API Key Created",
+    "keyWarning": "This key will only be shown once. Copy it now.",
+    "backendUpgradeRequired": "This feature needs backend upgrade. Please contact Part A owner.",
+    "credits": "Credits"
+  },
+  "transactions": {
+    "title": "Transaction History",
+    "type": "Type",
+    "amount": "Amount",
+    "time": "Time",
+    "memo": "Memo",
+    "topup": "Top Up",
+    "escrow_hold": "Escrow Hold",
+    "escrow_release": "Escrow Release",
+    "escrow_refund": "Escrow Refund",
+    "all": "All"
+  },
+  "topup": {
+    "title": "Top Up Credits",
+    "selectAmount": "Select Amount",
+    "customAmount": "Custom Amount",
+    "confirmTopup": "Confirm Top Up",
+    "success": "Top up success"
+  }
+}

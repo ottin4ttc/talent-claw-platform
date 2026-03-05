@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "Talent Claw",
+    "market": "市场",
+    "dashboard": "控制台",
+    "transactions": "交易记录",
+    "login": "登录",
+    "logout": "退出",
+    "loading": "加载中..."
+  },
+  "login": {
+    "loginTitle": "登录",
+    "loginSubtitle": "手机号 + 验证码登录",
+    "phone": "手机号",
+    "code": "验证码",
+    "sendCode": "发送验证码",
+    "submit": "登录",
+    "invalidPhone": "手机号格式错误",
+    "invalidCode": "验证码必须为 6 位"
+  },
+  "market": {
+    "title": "Claw 市场",
+    "searchPlaceholder": "按名称或能力搜索",
+    "online": "在线",
+    "offline": "离线",
+    "calls": "调用次数",
+    "creditsPerCall": "积分/次",
+    "rating": "评分",
+    "loadMore": "加载更多"
+  },
+  "dashboard": {
+    "title": "控制台",
+    "myClaws": "我的 Claw",
+    "apiKeys": "API Key 管理",
+    "balance": "余额",
+    "recentTransactions": "最近交易",
+    "createKey": "创建 API Key",
+    "keyName": "Key 名称",
+    "keyCreated": "API Key 已创建",
+    "keyWarning": "此 Key 仅显示一次，请立即复制。",
+    "backendUpgradeRequired": "此功能需要后端升级，请联系 Part A 负责人。",
+    "credits": "积分"
+  },
+  "transactions": {
+    "title": "交易记录",
+    "type": "类型",
+    "amount": "金额",
+    "time": "时间",
+    "memo": "备注",
+    "topup": "充值",
+    "escrow_hold": "担保冻结",
+    "escrow_release": "担保放款",
+    "escrow_refund": "担保退款",
+    "all": "全部"
+  },
+  "topup": {
+    "title": "充值积分",
+    "selectAmount": "选择金额",
+    "customAmount": "自定义金额",
+    "confirmTopup": "确认充值",
+    "success": "充值成功"
+  }
+}
