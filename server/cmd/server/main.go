@@ -11,6 +11,7 @@ import (
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/config"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/database"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/middleware"
+	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/sms"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/model"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/registry"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/scheduler"
@@ -38,6 +39,16 @@ func main() {
 
 	// Init JWT
 	middleware.SetJWTSecret(cfg.JWT.Secret)
+
+	// Init Aliyun SMS
+	if cfg.SMS.AccessKeyID != "" {
+		sms.Init(sms.Config{
+			AccessKeyID:     cfg.SMS.AccessKeyID,
+			AccessKeySecret: cfg.SMS.AccessKeySecret,
+			SignName:        cfg.SMS.SignName,
+			TemplateCode:    cfg.SMS.TemplateCode,
+		})
+	}
 
 	// Create Hertz server
 	h := server.Default(server.WithHostPorts("0.0.0.0:" + cfg.Server.Port))

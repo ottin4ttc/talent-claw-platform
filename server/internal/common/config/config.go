@@ -10,6 +10,14 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	JWT      JWTConfig
+	SMS      SMSConfig
+}
+
+type SMSConfig struct {
+	AccessKeyID     string
+	AccessKeySecret string
+	SignName        string
+	TemplateCode    string
 }
 
 type ServerConfig struct {
@@ -66,6 +74,12 @@ func Load() *Config {
 		JWT: JWTConfig{
 			Secret:     getEnv("JWT_SECRET", "talent-claw-secret-change-me"),
 			ExpireDays: getEnvInt("JWT_EXPIRE_DAYS", 7),
+		},
+		SMS: SMSConfig{
+			AccessKeyID:     getEnv("SMS_ACCESS_KEY_ID", ""),
+			AccessKeySecret: getEnv("SMS_ACCESS_KEY_SECRET", ""),
+			SignName:        getEnv("SMS_SIGN_NAME", ""),
+			TemplateCode:    getEnv("SMS_TEMPLATE_CODE", ""),
 		},
 	}
 }

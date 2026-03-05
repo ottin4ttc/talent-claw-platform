@@ -11,7 +11,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "NEXT_PUBLIC_MOCK=true NEXT_PUBLIC_API_BASE=/v1 pnpm start --hostname localhost --port 3000",
+      "pnpm start --hostname localhost --port 3000",
     port: 3000,
     reuseExistingServer: false,
   },

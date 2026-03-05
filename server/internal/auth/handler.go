@@ -6,13 +6,18 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
+	"math/big"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/google/uuid"
+	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/cache"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/database"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/middleware"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/model"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/response"
+	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/sms"
 )
 
 // --- Auth ---
@@ -21,13 +26,43 @@ type SendCodeReq struct {
 	Phone string `json:"phone" vd:"len($)>0"`
 }
 
+func generateCode() string {
+	n, _ := rand.Int(rand.Reader, big.NewInt(1000000))
+	return fmt.Sprintf("%06d", n.Int64())
+}
+
 func SendCode(ctx context.Context, c *app.RequestContext) {
 	var req SendCodeReq
 	if err := c.BindAndValidate(&req); err != nil {
 		response.ErrBadRequest(ctx, c, err.Error())
 		return
 	}
-	// Mock: always succeed, code is 123456
+
+	// Rate limit: 1 code per 60 seconds per phone
+	rateLimitKey := "sms_rate:" + req.Phone
+	if cache.RDB.Exists(ctx, rateLimitKey).Val() > 0 {
+		response.ErrBadRequest(ctx, c, "please wait before requesting another code")
+		return
+	}
+
+	code := generateCode()
+
+	// Store code in Redis with 5 min TTL
+	codeKey := "sms_code:" + req.Phone
+	cache.RDB.Set(ctx, codeKey, code, 5*time.Minute)
+	// Set rate limit: 60 seconds
+	cache.RDB.Set(ctx, rateLimitKey, "1", 60*time.Second)
+
+	// Send via Aliyun SMS
+	if err := sms.SendCode(req.Phone, code); err != nil {
+		log.Printf("failed to send sms to %s: %v", req.Phone, err)
+		// Clean up on failure
+		cache.RDB.Del(ctx, codeKey)
+		cache.RDB.Del(ctx, rateLimitKey)
+		response.ErrInternal(ctx, c, "failed to send verification code")
+		return
+	}
+
 	response.Success(ctx, c, nil)
 }
 
@@ -48,11 +83,16 @@ func Login(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Mock verification: code must be "123456"
-	if req.Code != "123456" {
+	// Verify code from Redis
+	codeKey := "sms_code:" + req.Phone
+	stored, err := cache.RDB.Get(ctx, codeKey).Result()
+	if err != nil || stored != req.Code {
 		response.ErrUnauthorized(ctx, c, "invalid verification code")
 		return
 	}
+
+	// Code verified, delete it
+	cache.RDB.Del(ctx, codeKey)
 
 	// Find or create user
 	var user model.User

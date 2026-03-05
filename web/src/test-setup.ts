@@ -1,7 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { afterEach, vi } from "vitest";
 import React from "react";
-import { server, resetMockBalance } from "./mocks/server";
 
 type MockLinkProps = React.PropsWithChildren<{
   href: string | { href?: string };
@@ -55,13 +54,9 @@ function ensureUsableLocalStorage() {
 
 ensureUsableLocalStorage();
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
-  server.resetHandlers();
-  resetMockBalance();
   localStorage.clear();
 });
-afterAll(() => server.close());
 
 vi.mock("@/i18n/routing", () => ({
   routing: {
