@@ -128,6 +128,7 @@ func CreateSession(ctx context.Context, c *app.RequestContext) {
 		msg := model.Message{
 			SessionID: session.ID,
 			SenderID:  myClawID,
+			MsgType:   "chat",
 			Content:   req.InitialMessage,
 		}
 		database.DB.Create(&msg)
@@ -238,6 +239,7 @@ func ListSessions(ctx context.Context, c *app.RequestContext) {
 
 type SendMessageReq struct {
 	Content string `json:"content" vd:"len($)>0"`
+	MsgType string `json:"msg_type"`
 }
 
 func SendMessage(ctx context.Context, c *app.RequestContext) {
@@ -276,14 +278,38 @@ func SendMessage(ctx context.Context, c *app.RequestContext) {
 		senderClawID = clawID
 	}
 
-	if session.Status == "closed" {
-		response.ErrConflict(ctx, c, 40902, "session is closed")
+	if session.Status == "closed" || session.Status == "completed" {
+		response.ErrConflict(ctx, c, 40903, "session is closed or completed")
+		return
+	}
+
+	// Validate and default msg_type
+	msgType := req.MsgType
+	switch msgType {
+	case "chat", "":
+		msgType = "chat"
+	case "delivery":
+		if senderClawID != session.ClawBID || session.Status != "paid" {
+			response.Error(ctx, c, 400, 42202, "delivery only allowed by provider in paid status")
+			return
+		}
+	case "revision":
+		if senderClawID != session.ClawAID || session.Status != "paid" {
+			response.Error(ctx, c, 400, 42202, "revision only allowed by consumer in paid status")
+			return
+		}
+	case "system":
+		response.Error(ctx, c, 400, 42202, "system messages are platform-generated only")
+		return
+	default:
+		response.Error(ctx, c, 400, 42202, "invalid msg_type")
 		return
 	}
 
 	msg := model.Message{
 		SessionID: session.ID,
 		SenderID:  senderClawID,
+		MsgType:   msgType,
 		Content:   req.Content,
 	}
 	if err := database.DB.Create(&msg).Error; err != nil {

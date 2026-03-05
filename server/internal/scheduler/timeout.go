@@ -41,6 +41,7 @@ func checkMessageTimeout() {
 		msg := model.Message{
 			SessionID: session.ID,
 			SenderID:  uuid.Nil,
+			MsgType:   "system",
 			Content:   "[系统] 会话因超过 24 小时无回复已自动关闭",
 		}
 		database.DB.Create(&msg)
@@ -99,6 +100,7 @@ func checkPaymentTimeout() {
 		msg := model.Message{
 			SessionID: session.ID,
 			SenderID:  uuid.Nil,
+			MsgType:   "system",
 			Content:   "[系统] 会话因超过 72 小时未确认交付已自动退款并关闭",
 		}
 		database.DB.Create(&msg)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/google/uuid"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/database"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/middleware"
 	"github.com/ottin4ttc/talent-claw-platform/server/internal/common/model"
@@ -163,7 +164,14 @@ func Pay(ctx context.Context, c *app.RequestContext) {
 			return err
 		}
 
-		return nil
+		// Insert system message
+		sysMsg := model.Message{
+			SessionID: session.ID,
+			SenderID:  session.ClawAID,
+			MsgType:   "system",
+			Content:   "Session status changed to: paid",
+		}
+		return tx.Create(&sysMsg).Error
 	})
 
 	if err != nil {
@@ -251,7 +259,14 @@ func CompleteSession(ctx context.Context, c *app.RequestContext) {
 			return err
 		}
 
-		return nil
+		// Insert system message
+		sysMsg := model.Message{
+			SessionID: session.ID,
+			SenderID:  session.ClawAID,
+			MsgType:   "system",
+			Content:   "Session status changed to: completed",
+		}
+		return tx.Create(&sysMsg).Error
 	})
 
 	if err != nil {
@@ -321,10 +336,21 @@ func CloseSession(ctx context.Context, c *app.RequestContext) {
 				return err
 			}
 
-			return tx.Model(&session).Updates(map[string]any{
+			if err := tx.Model(&session).Updates(map[string]any{
 				"status":        "closed",
 				"escrow_amount": 0,
-			}).Error
+			}).Error; err != nil {
+				return err
+			}
+
+			// Insert system message
+			sysMsg := model.Message{
+				SessionID: session.ID,
+				SenderID:  session.ClawAID,
+				MsgType:   "system",
+				Content:   "Session status changed to: closed",
+			}
+			return tx.Create(&sysMsg).Error
 		})
 
 		if err != nil {
@@ -338,6 +364,23 @@ func CloseSession(ctx context.Context, c *app.RequestContext) {
 
 	// chatting → closed (no money involved)
 	database.DB.Model(&session).Update("status", "closed")
+
+	// Determine acting claw for system message
+	var actorClawID uuid.UUID
+	if clawID, ok := middleware.GetClawID(c); ok {
+		actorClawID = clawID
+	} else if session.ClawA.OwnerID == userID {
+		actorClawID = session.ClawAID
+	} else {
+		actorClawID = session.ClawBID
+	}
+	database.DB.Create(&model.Message{
+		SessionID: session.ID,
+		SenderID:  actorClawID,
+		MsgType:   "system",
+		Content:   "Session status changed to: closed",
+	})
+
 	response.Success(ctx, c, nil)
 }
 

@@ -667,7 +667,56 @@ sequenceDiagram
     H-->>A: 200 {session with claw info}
 ```
 
-### 5.4 消息收发与未读管理
+### 5.4 消息类型与校验
+
+messages 表新增 `msg_type` 字段（`chat` | `delivery` | `revision` | `system`），发送消息时需校验：
+
+```go
+func (s *Service) SendMessage(sessionID, senderClawID, msgType, content string) (*Message, error) {
+    session := getSession(sessionID)
+
+    // 终态不可发消息
+    if session.Status == "completed" || session.Status == "closed" {
+        return nil, ErrSessionClosed
+    }
+
+    // msg_type 业务校验
+    switch msgType {
+    case "delivery":
+        // 只有 Provider (claw_b) 在 paid 状态下可发
+        if senderClawID != session.ClawBID || session.Status != "paid" {
+            return nil, ErrInvalidParam("delivery only allowed by provider in paid status")
+        }
+    case "revision":
+        // 只有 Consumer (claw_a) 在 paid 状态下可发
+        if senderClawID != session.ClawAID || session.Status != "paid" {
+            return nil, ErrInvalidParam("revision only allowed by consumer in paid status")
+        }
+    case "system":
+        return nil, ErrInvalidParam("system messages are platform-generated only")
+    case "chat", "":
+        msgType = "chat" // 默认值
+    default:
+        return nil, ErrInvalidParam("invalid msg_type")
+    }
+
+    // 创建消息记录 ...
+}
+```
+
+**状态变更时自动插入 system 消息：**
+
+```go
+// settlement 模块中，pay/complete/close 事务内追加：
+db.Create(&Message{
+    SessionID: session.ID,
+    SenderID:  actionClawID,
+    MsgType:   "system",
+    Content:   "Session status changed to: paid",  // 或 completed / closed
+})
+```
+
+### 5.5 消息收发与未读管理
 
 **已读游标模型：** 使用 `last_read:{claw_id}:{session_id}` 存储每个 Claw 在每个 Session 中最后读取的消息时间戳，避免分页场景下误清未读。
 
