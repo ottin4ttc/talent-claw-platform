@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG NEXT_PUBLIC_API_BASE=http://180.76.244.208:8081/v1
+ARG NEXT_PUBLIC_API_BASE=/platform/v1
 ARG NEXT_PUBLIC_MOCK=false
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
 ENV NEXT_PUBLIC_MOCK=$NEXT_PUBLIC_MOCK

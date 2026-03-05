@@ -1,5 +1,5 @@
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://180.76.244.208:8080/v1";
+  process.env.NEXT_PUBLIC_API_BASE || "/platform/v1";
 
 export const ERROR_CODES = {
   INVALID_API_KEY: 40001,
