@@ -17,6 +17,8 @@
     "sendCode": "发送验证码",
     "submit": "登录",
     "invalidPhone": "手机号格式错误",
+    "enterCode": "输入验证码",
+    "codeSentTo": "验证码已发送至",
     "invalidCode": "验证码必须为 6 位",
     "sending": "发送中...",
     "loggingIn": "登录中...",

@@ -2,128 +2,207 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "sonner";
+import { ArrowLeft, Phone } from "lucide-react";
 import { useRouter } from "@/i18n/routing";
 import { useLogin, useSendCode } from "@/hooks/useAuth";
 import { getToken } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp";
 
-const phoneSchema = z.object({
-  phone: z.string().regex(/^1\d{10}$/),
-});
-
-const loginSchema = z.object({
-  code: z.string().length(6),
-});
+function maskPhone(phone: string) {
+  if (phone.length !== 11) return phone;
+  return phone.slice(0, 3) + " **** " + phone.slice(7);
+}
 
 export default function LoginPage() {
   const t = useTranslations("login");
   const router = useRouter();
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState(false);
+  const [otp, setOtp] = useState("");
   const [countdown, setCountdown] = useState(0);
 
   const sendCode = useSendCode();
   const login = useLogin();
 
-  // If already logged in, redirect to dashboard
   useEffect(() => {
     if (getToken()) {
       router.replace("/dashboard");
     }
   }, [router]);
 
-  // Countdown timer
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const phoneForm = useForm<z.infer<typeof phoneSchema>>({ resolver: zodResolver(phoneSchema) });
-  const codeForm = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
-
-  const handleSendCode = phoneForm.handleSubmit(async (data) => {
+  const handleSendCode = useCallback(async () => {
+    if (!/^1\d{10}$/.test(phone)) {
+      setPhoneError(true);
+      return;
+    }
+    setPhoneError(false);
     try {
-      await sendCode.mutateAsync({ phone: data.phone });
-      setPhone(data.phone);
+      await sendCode.mutateAsync({ phone });
       setStep("code");
+      setOtp("");
       setCountdown(60);
     } catch {
       toast.error(t("sendCodeFailed"));
     }
-  });
+  }, [phone, sendCode, t]);
 
   const handleResend = useCallback(async () => {
     if (countdown > 0) return;
     try {
       await sendCode.mutateAsync({ phone });
       setCountdown(60);
+      setOtp("");
     } catch {
       toast.error(t("sendCodeFailed"));
     }
   }, [countdown, phone, sendCode, t]);
 
-  const handleLogin = codeForm.handleSubmit(async (data) => {
-    try {
-      await login.mutateAsync({ phone, code: data.code });
-      router.push("/dashboard");
-    } catch {
-      toast.error(t("loginFailed"));
-    }
-  });
+  const handleLogin = useCallback(
+    async (code: string) => {
+      try {
+        await login.mutateAsync({ phone, code });
+        router.push("/dashboard");
+      } catch {
+        toast.error(t("loginFailed"));
+        setOtp("");
+      }
+    },
+    [phone, login, router, t]
+  );
+
+  const handleOtpChange = useCallback(
+    (value: string) => {
+      setOtp(value);
+      if (value.length === 6) {
+        handleLogin(value);
+      }
+    },
+    [handleLogin]
+  );
+
+  const handleBack = useCallback(() => {
+    setStep("phone");
+    setOtp("");
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card p-8">
-        <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
-          <p className="text-sm text-muted-foreground">{t("loginSubtitle")}</p>
-        </div>
-
+      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8">
         {step === "phone" ? (
-          <form onSubmit={handleSendCode} className="space-y-3">
-            <Input placeholder={t("phone")} {...phoneForm.register("phone")} />
-            {phoneForm.formState.errors.phone && (
-              <p className="text-sm text-destructive">{t("invalidPhone")}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={sendCode.isPending}>
+          /* ──── Step 1: Phone ──── */
+          <div className="space-y-6">
+            <div className="space-y-1 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <Phone className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("loginSubtitle")}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder={t("phone")}
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setPhoneError(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSendCode();
+                }}
+                className="h-12 text-base"
+              />
+              {phoneError && (
+                <p className="text-sm text-destructive">{t("invalidPhone")}</p>
+              )}
+            </div>
+
+            <Button
+              className="w-full h-12 text-base"
+              disabled={sendCode.isPending}
+              onClick={handleSendCode}
+            >
               {sendCode.isPending ? t("sending") : t("sendCode")}
             </Button>
-          </form>
+          </div>
         ) : (
-          <form onSubmit={handleLogin} className="space-y-3">
-            <Input placeholder={t("code")} {...codeForm.register("code")} />
-            {codeForm.formState.errors.code && (
-              <p className="text-sm text-destructive">{t("invalidCode")}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={login.isPending}>
-              {login.isPending ? t("loggingIn") : t("submit")}
-            </Button>
-            <div className="flex items-center justify-between">
-              <Button
+          /* ──── Step 2: OTP Code ──── */
+          <div className="space-y-6">
+            <div className="space-y-1 text-center">
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setStep("phone")}
+                onClick={handleBack}
+                className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
+                <ArrowLeft className="h-4 w-4" />
                 {t("back")}
-              </Button>
-              <Button
+              </button>
+              <h1 className="text-2xl font-bold">{t("enterCode")}</h1>
+              <p className="text-sm text-muted-foreground">
+                {t("codeSentTo")}
+              </p>
+              <p className="font-mono text-base font-medium tracking-wider">
+                {maskPhone(phone)}
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={otp}
+                onChange={handleOtpChange}
+                disabled={login.isPending}
+                autoFocus
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            {login.isPending && (
+              <p className="text-center text-sm text-muted-foreground">{t("loggingIn")}</p>
+            )}
+
+            <div className="text-center">
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={countdown > 0 || sendCode.isPending}
                 onClick={handleResend}
               >
-                {countdown > 0 ? t("resendCountdown", { seconds: countdown }) : t("resendCode")}
-              </Button>
+                {countdown > 0
+                  ? t("resendCountdown", { seconds: countdown })
+                  : t("resendCode")}
+              </button>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>

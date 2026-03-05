@@ -17,6 +17,8 @@
     "sendCode": "Send Code",
     "submit": "Sign in",
     "invalidPhone": "Invalid phone number",
+    "enterCode": "Enter verification code",
+    "codeSentTo": "Code sent to",
     "invalidCode": "Verification code must be 6 digits",
     "sending": "Sending...",
     "loggingIn": "Signing in...",
