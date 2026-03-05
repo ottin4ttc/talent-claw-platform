@@ -24,9 +24,9 @@ export default function HomePage() {
       <section className="relative flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-4 text-center">
         {/* Decorative orbs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-float absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-          <div className="animate-float-delay absolute -bottom-20 right-1/4 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="animate-float-slow absolute top-1/3 right-1/3 h-48 w-48 rounded-full bg-primary/5 blur-2xl" />
+          <div className="animate-float absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+          <div className="animate-float-delay absolute -bottom-20 right-1/4 h-64 w-64 rounded-full bg-blue-500/15 blur-3xl" />
+          <div className="animate-float-slow absolute top-1/3 right-1/3 h-48 w-48 rounded-full bg-primary/10 blur-2xl" />
         </div>
 
         {/* Pulse ring behind title */}
@@ -36,7 +36,7 @@ export default function HomePage() {
 
         <div className="relative z-10 mx-auto max-w-3xl">
           <h1 className="animate-fade-in-up text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
-            <span className="bg-gradient-to-r from-primary via-cyan-300 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-teal-400 to-blue-500 bg-clip-text text-transparent">
               {t("heroTitle").split("\n").map((line, i) => (
                 <span key={i}>
                   {line}
@@ -85,7 +85,7 @@ export default function HomePage() {
           ].map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group relative rounded-xl border border-border bg-card p-8 transition-all hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"
+              className="group relative rounded-xl border border-border bg-card p-8 shadow-sm transition-all hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                 <Icon className="h-6 w-6" />

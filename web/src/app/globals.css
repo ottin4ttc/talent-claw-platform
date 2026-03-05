@@ -24,24 +24,24 @@
 }
 
 .light {
-  --background: 0 0% 100%;
+  --background: 220 20% 97%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
   --primary: 173 80% 35%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 214 32% 91%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 25% 92%;
   --secondary-foreground: 222 47% 11%;
-  --muted: 214 32% 94%;
-  --muted-foreground: 215 16% 37%;
-  --accent: 214 32% 91%;
+  --muted: 220 16% 93%;
+  --muted-foreground: 215 16% 43%;
+  --accent: 214 25% 92%;
   --accent-foreground: 222 47% 11%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214 32% 84%;
-  --input: 214 32% 84%;
+  --border: 220 16% 87%;
+  --input: 220 16% 87%;
   --ring: 173 80% 35%;
 }
 
@@ -56,6 +56,15 @@ body {
     hsl(var(--background));
   color: hsl(var(--foreground));
   min-height: 100vh;
+}
+
+.light body,
+body:is(.light *) {
+  background:
+    radial-gradient(circle at 0% 0%, hsl(173 80% 35% / 0.08), transparent 50%),
+    radial-gradient(circle at 100% 0%, hsl(220 80% 60% / 0.06), transparent 45%),
+    radial-gradient(circle at 50% 100%, hsl(250 60% 60% / 0.04), transparent 50%),
+    hsl(var(--background));
 }
 
 @keyframes float {
