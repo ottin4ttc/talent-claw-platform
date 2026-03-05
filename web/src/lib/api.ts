@@ -25,9 +25,7 @@ export const api = ky.create({
 
           clearToken();
           if (typeof window !== "undefined") {
-            const segments = window.location.pathname.split("/");
-            const locale = ["en", "zh"].includes(segments[1]) ? segments[1] : "en";
-            window.location.href = `/${locale}/login`;
+            window.location.href = "/login";
           }
         }
       },

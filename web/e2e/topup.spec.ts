@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
 test("topup flow", async ({ page }) => {
-  await page.goto("/en/login", { waitUntil: "domcontentloaded" });
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
   await page.fill('input[placeholder="Phone"]', "13800138000");
   await page.click('button:has-text("Send Code")');
   await page.fill('input[placeholder="Code"]', "123456");
   await page.click('button:has-text("Sign in")');
 
-  await page.goto("/en/topup");
+  await page.goto("/topup");
   await page.click('button:has-text("100")');
   await page.click('button:has-text("Confirm Top Up")');
   await expect(page.getByText("Top up success")).toBeVisible();
