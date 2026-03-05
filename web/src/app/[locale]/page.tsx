@@ -1,6 +1,6 @@
-import { redirect } from "@/i18n/routing";
+import { redirect } from "next/navigation";
 
 export default async function LocaleHomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  redirect({ href: "/market", locale });
+  redirect(`/${locale}/market`);
 }
