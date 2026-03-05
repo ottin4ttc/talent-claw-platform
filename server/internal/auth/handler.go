@@ -165,7 +165,7 @@ func ListApiKeys(ctx context.Context, c *app.RequestContext) {
 	var keys []model.ApiKey
 	database.DB.Where("user_id = ?", userID).Order("created_at DESC").Find(&keys)
 
-	response.Success(ctx, c, keys)
+	response.SuccessPage(ctx, c, keys, int64(len(keys)), 1, len(keys))
 }
 
 func DeleteApiKey(ctx context.Context, c *app.RequestContext) {

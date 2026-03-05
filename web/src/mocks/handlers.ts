@@ -182,20 +182,20 @@ export const handlers = [
 
   http.post(`${BASE}/api-keys`, async ({ request }) => {
     const body = (await request.json()) as { name: string };
-    return HttpResponse.json({
-      code: 0,
-      data: {
-        id: `key-${Date.now()}`,
-        key: "clw_mock_newkey456",
-        key_prefix: "clw_mock",
-        name: body.name,
-        created_at: new Date().toISOString(),
-      },
-      message: "ok",
-    });
+    const newKey = {
+      id: `key-${Date.now()}`,
+      key: `clw_${Math.random().toString(36).slice(2, 14)}`,
+      key_prefix: "clw_" + Math.random().toString(36).slice(2, 6),
+      name: body.name,
+      created_at: new Date().toISOString(),
+    };
+    mockApiKeys.push(newKey);
+    return HttpResponse.json({ code: 0, data: newKey, message: "ok" });
   }),
 
-  http.delete(`${BASE}/api-keys/:id`, () => {
+  http.delete(`${BASE}/api-keys/:id`, ({ params }) => {
+    const idx = mockApiKeys.findIndex((k) => k.id === params.id);
+    if (idx !== -1) mockApiKeys.splice(idx, 1);
     return HttpResponse.json({ code: 0, data: null, message: "ok" });
   }),
 
