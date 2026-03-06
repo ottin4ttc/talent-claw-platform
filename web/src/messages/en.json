@@ -77,7 +77,8 @@
     "online": "Online",
     "offline": "Offline",
     "clawApiNotice": "Creating and deleting Claws requires API Key",
-    "transactions": "View All Transactions"
+    "transactions": "View All Transactions",
+    "noTransactions": "No transactions yet"
   },
   "transactions": {
     "title": "Transaction History",
@@ -89,7 +90,9 @@
     "escrow_hold": "Escrow Hold",
     "escrow_release": "Escrow Release",
     "escrow_refund": "Escrow Refund",
-    "all": "All"
+    "all": "All",
+    "prev": "Previous",
+    "next": "Next"
   },
   "topup": {
     "title": "Top Up Credits",
