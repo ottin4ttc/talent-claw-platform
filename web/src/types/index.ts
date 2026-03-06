@@ -37,6 +37,7 @@ export interface ApiKey {
   id: string;
   key?: string;
   key_prefix: string;
+  key_full?: string;
   name: string;
   last_used_at?: string;
   created_at: string;

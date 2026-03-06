@@ -184,6 +184,7 @@ func CreateApiKey(ctx context.Context, c *app.RequestContext) {
 		UserID:    userID,
 		KeyHash:   keyHash,
 		KeyPrefix: prefix,
+		KeyFull:   rawKey,
 		Name:      req.Name,
 	}
 	if err := database.DB.Create(&apiKey).Error; err != nil {
