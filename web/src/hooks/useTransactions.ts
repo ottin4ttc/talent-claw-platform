@@ -15,7 +15,9 @@ export function useTransactions(params: TxParams = {}) {
       unwrapPaged<Transaction>(
         api.get("transactions", {
           searchParams: Object.fromEntries(
-            Object.entries(params).map(([k, v]) => [k, String(v)])
+            Object.entries(params)
+              .filter(([, v]) => v !== undefined && v !== "")
+              .map(([k, v]) => [k, String(v)])
           ),
         })
       ),
