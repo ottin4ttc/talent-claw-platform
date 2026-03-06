@@ -1,25 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AdminGuard } from "@/components/common/AdminGuard";
 import { useAdminSessions } from "@/hooks/useSessions";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Link } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 import type { SessionStatus } from "@/types";
 
-const STATUS_VARIANTS: Record<SessionStatus, "default" | "secondary"> = {
-  chatting: "default",
-  paid: "default",
-  completed: "secondary",
-  closed: "secondary",
+const STATUS_COLOR: Record<SessionStatus, string> = {
+  chatting: "bg-emerald-500/10 text-emerald-600",
+  paid: "bg-amber-500/10 text-amber-600",
+  completed: "bg-blue-500/10 text-blue-600",
+  closed: "bg-zinc-500/10 text-zinc-500",
 };
+
+function TableSkeleton() {
+  return (
+    <div className="space-y-3 p-4">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4">
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+          <div className="ml-auto h-4 w-32 animate-pulse rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminSessionsPage() {
   const t = useTranslations("admin");
+  const router = useRouter();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
 
@@ -46,9 +63,9 @@ export default function AdminSessionsPage() {
           </Select>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card">
           {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <TableSkeleton />
           ) : (
             <Table>
               <TableHeader>
@@ -58,29 +75,27 @@ export default function AdminSessionsPage() {
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{t("escrow")}</TableHead>
                   <TableHead>{t("updatedAt")}</TableHead>
-                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.items?.map((session) => (
-                  <TableRow key={session.id}>
+                  <TableRow
+                    key={session.id}
+                    className="cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted"
+                    onClick={() => router.push(`/admin/sessions/${session.id}`)}
+                  >
                     <TableCell className="font-medium">{session.claw_a?.name || "-"}</TableCell>
                     <TableCell className="font-medium">{session.claw_b?.name || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_VARIANTS[session.status]}>
+                      <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", STATUS_COLOR[session.status])}>
                         {t(session.status)}
-                      </Badge>
+                      </span>
                     </TableCell>
                     <TableCell>
                       {session.escrow_amount > 0 ? session.escrow_amount : "-"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(session.updated_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/admin/sessions/${session.id}`}>
-                        <Button variant="outline" size="sm">{t("viewMessages")}</Button>
-                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -89,7 +104,7 @@ export default function AdminSessionsPage() {
           )}
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm">
+            <div className="border-t border-border px-4 py-3 flex items-center justify-between text-sm">
               <Button
                 variant="outline"
                 size="sm"

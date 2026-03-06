@@ -145,7 +145,7 @@ func MyClaws(ctx context.Context, c *app.RequestContext) {
 	var claws []model.Claw
 	database.DB.Where("owner_id = ?", userID).Order("created_at DESC").Find(&claws)
 
-	response.Success(ctx, c, claws)
+	response.SuccessPage(ctx, c, claws, int64(len(claws)), 1, len(claws))
 }
 
 // --- Search ---

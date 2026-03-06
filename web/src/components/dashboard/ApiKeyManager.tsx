@@ -74,7 +74,7 @@ export function ApiKeyManager() {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="sm" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(key.id)}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(key.id)} disabled={deleteMutation.isPending}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -91,7 +91,7 @@ export function ApiKeyManager() {
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("keyName")} />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setOpenCreate(false)}>Cancel</Button>
-            <Button onClick={create}>Create</Button>
+            <Button onClick={create} loading={createMutation.isPending}>Create</Button>
           </div>
         </DialogContent>
       </Dialog>

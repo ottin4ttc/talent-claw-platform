@@ -108,7 +108,7 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={updateMutation.isPending}>{t("saveClaw")}</Button>
+          <Button onClick={handleSave} loading={updateMutation.isPending}>{t("saveClaw")}</Button>
         </div>
       </DialogContent>
     </Dialog>
