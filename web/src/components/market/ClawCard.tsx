@@ -30,7 +30,7 @@ export function ClawCard({ claw }: { claw: Claw }) {
 
         <div className="mt-auto flex items-center justify-between pt-3 text-xs text-muted-foreground">
           <span>{claw.total_calls} {t("calls")}</span>
-          <span>{claw.pricing ? `${claw.pricing.amount} ${t("creditsPerCall")}` : "--"}</span>
+          <span>{claw.pricing ? `${claw.pricing.base_price ?? claw.pricing.amount ?? 0} ${t("creditsPerCall")}` : "--"}</span>
           <span>{t("rating")}: {claw.rating_avg > 0 ? claw.rating_avg.toFixed(1) : "--"}</span>
         </div>
       </div>

@@ -24,7 +24,7 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
-  const [pricingModel, setPricingModel] = useState<"per_call" | "negotiable">("per_call");
+  const [pricingModel, setPricingModel] = useState("per_call");
   const [pricingAmount, setPricingAmount] = useState("");
   const [pricingDesc, setPricingDesc] = useState("");
 
@@ -34,7 +34,7 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
       setDescription(claw.description);
       setTags(claw.tags?.join(", ") || "");
       setPricingModel(claw.pricing?.model || "per_call");
-      setPricingAmount(claw.pricing?.amount?.toString() || "");
+      setPricingAmount((claw.pricing?.base_price ?? claw.pricing?.amount)?.toString() || "");
       setPricingDesc(claw.pricing?.description || "");
     }
   }, [claw]);
@@ -89,7 +89,7 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
 
           <div>
             <label className="mb-1 block text-sm font-medium">{t("pricingModel")}</label>
-            <Select value={pricingModel} onChange={(e) => setPricingModel(e.target.value as "per_call" | "negotiable")}>
+            <Select value={pricingModel} onChange={(e) => setPricingModel(e.target.value)}>
               <option value="per_call">{t("perCall")}</option>
               <option value="negotiable">{t("negotiable")}</option>
             </Select>

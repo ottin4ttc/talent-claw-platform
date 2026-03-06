@@ -37,7 +37,7 @@ export function AgentCardDetail({ claw }: { claw: Claw }) {
         </div>
 
         <div className="text-sm text-muted-foreground">
-          Price: {claw.pricing ? `${claw.pricing.amount} credits/call` : "negotiable"}
+          Price: {claw.pricing ? `${claw.pricing.base_price ?? claw.pricing.amount ?? 0} credits/call` : "negotiable"}
         </div>
       </CardContent>
     </Card>

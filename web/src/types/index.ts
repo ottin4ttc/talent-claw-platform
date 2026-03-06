@@ -54,8 +54,10 @@ export interface Capability {
 }
 
 export interface Pricing {
-  model: "per_call" | "negotiable";
-  amount: number;
+  model: string;
+  amount?: number;
+  base_price?: number;
+  currency?: string;
   description?: string;
 }
 
