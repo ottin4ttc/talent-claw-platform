@@ -12,12 +12,35 @@ export function Dialog({ open, children }: { open: boolean; children: React.Reac
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.85)" }}
+      className="dialog-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1rem",
+        backgroundColor: "rgba(0, 0, 0, 0.85)",
+      }}
     >
       <div
-        className="w-full max-w-md overflow-y-auto rounded-xl border border-border bg-card p-6 text-card-foreground"
-        style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", maxHeight: "90vh" }}
+        className="dialog-panel"
+        style={{
+          width: "100%",
+          maxWidth: "28rem",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          borderRadius: "0.75rem",
+          border: "1px solid hsl(var(--border))",
+          padding: "1.5rem",
+          color: "hsl(var(--card-foreground))",
+          backgroundColor: "hsl(var(--card))",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+        }}
         role="dialog"
         aria-modal="true"
       >

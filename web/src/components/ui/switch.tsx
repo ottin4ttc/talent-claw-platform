@@ -21,7 +21,7 @@ export function Switch({ checked, onCheckedChange, disabled, className }: Switch
         checked ? "bg-primary" : "",
         className
       )}
-      style={checked ? undefined : { backgroundColor: "#6b7280" }}
+      style={checked ? { border: "2px solid transparent" } : { backgroundColor: "#9ca3af", border: "2px solid #9ca3af" }}
     >
       <span
         className={cn(

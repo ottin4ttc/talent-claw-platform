@@ -238,6 +238,16 @@ body:is(.light *) {
 }
 .animate-caret-blink { animation: caret-blink 1.2s ease-out infinite; }
 
+/* ── Dialog overlay ── */
+.dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.dialog-panel {
+  background-color: hsl(var(--card)) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
 /* ── Scrollbar styling ── */
 ::-webkit-scrollbar {
   width: 6px;
