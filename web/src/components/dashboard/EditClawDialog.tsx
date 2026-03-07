@@ -73,22 +73,22 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("clawName")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("clawName")}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("clawDescription")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("clawDescription")}</label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("clawTags")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("clawTags")}</label>
             <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="nlp, translate, ..." />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("pricingModel")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("pricingModel")}</label>
             <Select value={pricingModel} onChange={(e) => setPricingModel(e.target.value)}>
               <option value="per_call">{t("perCall")}</option>
               <option value="negotiable">{t("negotiable")}</option>
@@ -96,12 +96,12 @@ export function EditClawDialog({ claw, open, onClose }: EditClawDialogProps) {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("pricingAmount")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("pricingAmount")}</label>
             <Input type="number" value={pricingAmount} onChange={(e) => setPricingAmount(e.target.value)} min="0" />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">{t("pricingDesc")}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t("pricingDesc")}</label>
             <Input value={pricingDesc} onChange={(e) => setPricingDesc(e.target.value)} />
           </div>
         </div>

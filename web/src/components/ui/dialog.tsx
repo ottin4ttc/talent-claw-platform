@@ -1,18 +1,30 @@
 "use client";
 
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function Dialog({ open, children }: { open: boolean; children: React.ReactNode }) {
-  if (!open) return null;
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!open || !mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.85)" }}
     >
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6" style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }} role="dialog" aria-modal="true">
+      <div
+        className="w-full max-w-md overflow-y-auto rounded-xl border border-border bg-card p-6 text-card-foreground"
+        style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", maxHeight: "90vh" }}
+        role="dialog"
+        aria-modal="true"
+      >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
