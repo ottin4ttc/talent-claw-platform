@@ -51,7 +51,7 @@ function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150" style={{ backgroundColor: "hsl(var(--card))" }}>
           <div className="border-b border-border/60 px-4 py-3">
             <p className="text-sm font-medium">{user?.nickname || user?.phone}</p>
             <p className="text-xs text-muted-foreground">{user?.phone}</p>
@@ -129,7 +129,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border" style={{ backgroundColor: "hsl(var(--background))", backdropFilter: "none" }}>
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
