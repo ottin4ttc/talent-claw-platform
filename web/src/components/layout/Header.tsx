@@ -51,7 +51,7 @@ function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border/60 bg-card/95 shadow-xl shadow-black/20 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="border-b border-border/60 px-4 py-3">
             <p className="text-sm font-medium">{user?.nickname || user?.phone}</p>
             <p className="text-xs text-muted-foreground">{user?.phone}</p>
@@ -129,14 +129,14 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-blue-500 text-primary-foreground">
               <span className="text-sm font-black">TC</span>
             </div>
-            <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+            <span className="text-primary font-bold">
               {t("appName")}
             </span>
           </Link>
@@ -194,7 +194,7 @@ export function Header() {
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}
-          <div className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-border/50 bg-background/95 backdrop-blur-xl animate-in slide-in-from-right duration-200">
+          <div className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-border bg-background animate-in slide-in-from-right duration-200">
             <div className="flex items-center justify-between border-b border-border/50 px-4 py-4">
               <span className="text-sm font-semibold text-muted-foreground">Menu</span>
               <button

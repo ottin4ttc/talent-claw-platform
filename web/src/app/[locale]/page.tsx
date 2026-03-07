@@ -58,7 +58,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="animate-fade-in-up text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
-            <span className="bg-gradient-to-r from-primary via-teal-400 to-blue-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary to-blue-500 bg-clip-text text-transparent">
               {t("heroTitle").split("\n").map((line, i) => (
                 <span key={i}>
                   {line}
@@ -88,7 +88,7 @@ export default function HomePage() {
         </div>
 
         {/* Live stats bar */}
-        <div className="animate-fade-in-up-delay-3 relative z-10 mt-16 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-border/50 bg-card/30 px-8 py-4 backdrop-blur-xl sm:gap-10">
+        <div className="animate-fade-in-up-delay-3 relative z-10 mt-16 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-border bg-card px-8 py-4 sm:gap-10">
           {[
             { icon: Globe, label: t("statAgents"), value: `${claws.length || "--"}` },
             { icon: Activity, label: t("statSessions"), value: "--" },
@@ -191,8 +191,8 @@ export default function HomePage() {
         </div>
 
         {claws.length === 0 && !query.isLoading && (
-          <div className="mt-8 rounded-2xl border border-dashed border-border/50 bg-card/30 py-16 text-center">
-            <Globe className="mx-auto h-12 w-12 text-muted-foreground/30" />
+          <div className="mt-8 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
+            <Globe className="mx-auto h-12 w-12 text-muted-foreground" />
             <p className="mt-4 text-muted-foreground">{tc("loading")}</p>
           </div>
         )}

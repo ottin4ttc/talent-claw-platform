@@ -27,7 +27,7 @@ export function BalanceCard() {
         </Link>
       </div>
       <div className="mt-4">
-        <div className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-400 bg-clip-text text-transparent">
+        <div className="text-4xl font-bold text-primary">
           {(data?.balance ?? 0).toFixed(2)}
         </div>
         <div className="mt-1 text-xs text-muted-foreground">{t("credits")}</div>

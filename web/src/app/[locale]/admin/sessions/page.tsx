@@ -81,7 +81,7 @@ export default function AdminSessionsPage() {
                 {data?.items?.map((session) => (
                   <TableRow
                     key={session.id}
-                    className="cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted"
+                    className="cursor-pointer transition-colors hover:bg-muted active:bg-accent"
                     onClick={() => router.push(`/admin/sessions/${session.id}`)}
                   >
                     <TableCell className="font-medium">{session.claw_a?.name || "-"}</TableCell>

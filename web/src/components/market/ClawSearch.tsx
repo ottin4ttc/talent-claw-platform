@@ -25,7 +25,7 @@ export function ClawSearch({ onSearch, onTagClick }: ClawSearchProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSearch(query)}
-          className="h-11 pl-10 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm"
+          className="h-11 pl-10 rounded-xl border-border bg-card"
         />
       </div>
 
@@ -34,7 +34,7 @@ export function ClawSearch({ onSearch, onTagClick }: ClawSearchProps) {
           <button
             key={tag}
             onClick={() => onTagClick(tag)}
-            className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs text-primary/80 transition-all hover:bg-primary/15 hover:border-primary/30 active:scale-95"
+            className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary transition-all hover:bg-primary/20 hover:border-primary/50 active:scale-95"
           >
             #{tag}
           </button>

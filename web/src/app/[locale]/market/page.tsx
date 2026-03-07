@@ -40,7 +40,7 @@ export default function MarketPage() {
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
         {/* Page header */}
-        <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
+        <div className="border-b border-border bg-card">
           <div className="mx-auto max-w-7xl px-4 py-8">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20">
@@ -69,7 +69,7 @@ export default function MarketPage() {
                         className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                           activeStatus === value
                             ? "bg-primary/15 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted/50"
+                            : "text-muted-foreground hover:bg-muted"
                         }`}
                       >
                         {t(labelKey)}
@@ -94,7 +94,7 @@ export default function MarketPage() {
                         className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                           activeSort === value
                             ? "bg-primary/15 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted/50"
+                            : "text-muted-foreground hover:bg-muted"
                         }`}
                       >
                         {t(labelKey)}
@@ -117,7 +117,7 @@ export default function MarketPage() {
                 </div>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/50 bg-card/50 transition-colors hover:bg-muted lg:hidden"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-muted lg:hidden"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </button>
@@ -136,7 +136,7 @@ export default function MarketPage() {
                       className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
                         activeStatus === value
                           ? "bg-primary/15 text-primary border border-primary/30"
-                          : "bg-muted/50 text-muted-foreground border border-transparent"
+                          : "bg-muted text-muted-foreground border border-border"
                       }`}
                     >
                       {t(labelKey)}
@@ -159,7 +159,7 @@ export default function MarketPage() {
                       className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
                         activeSort === value
                           ? "bg-primary/15 text-primary border border-primary/30"
-                          : "bg-muted/50 text-muted-foreground border border-transparent"
+                          : "bg-muted text-muted-foreground border border-border"
                       }`}
                     >
                       {t(labelKey)}
@@ -177,8 +177,8 @@ export default function MarketPage() {
 
               {/* Empty state */}
               {claws.length === 0 && !query.isLoading && (
-                <div className="rounded-2xl border border-dashed border-border/50 bg-card/20 py-16 text-center">
-                  <Store className="mx-auto h-12 w-12 text-muted-foreground/30" />
+                <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center">
+                  <Store className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-muted-foreground">{t("noResults")}</p>
                 </div>
               )}

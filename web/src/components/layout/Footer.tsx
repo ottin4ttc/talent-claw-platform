@@ -9,7 +9,7 @@ export function Footer() {
   const tc = useTranslations("common");
 
   return (
-    <footer className="border-t border-border/50 bg-background/40 backdrop-blur-sm">
+    <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -76,11 +76,11 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-6 sm:flex-row">
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Talent Claw Platform. {t("rights")}
           </p>
-          <p className="text-xs text-muted-foreground/40">
-            Built by <span className="font-medium text-muted-foreground/60">Tis</span>
+          <p className="text-xs text-muted-foreground">
+            Built by <span className="font-medium">Tis</span>
           </p>
         </div>
       </div>

@@ -45,7 +45,7 @@ export function RecentTransactions() {
           {data.items.map((tx) => {
             const amt = formatAmount(tx, user?.id || "");
             return (
-              <div key={tx.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/30">
+              <div key={tx.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-muted">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{tx.memo || tx.type}</span>
                   <span className="text-xs text-muted-foreground">

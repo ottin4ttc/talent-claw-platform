@@ -18,7 +18,7 @@ export default function DashboardPage() {
       <div className="flex min-h-screen flex-col">
         <main className="flex-1">
           {/* Page header */}
-          <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
+          <div className="border-b border-border bg-card">
             <div className="mx-auto max-w-7xl px-4 py-8">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20">
