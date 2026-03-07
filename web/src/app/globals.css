@@ -99,12 +99,12 @@ body:is(.light *) {
     0 2px 8px hsl(0 0% 0% / 0.2);
 }
 
-/* Light mode: use solid card bg + shadow instead of transparency */
+/* ── Light mode overrides ── */
 .light .glass {
   background: hsl(var(--card));
   backdrop-filter: none;
   border: 1px solid hsl(var(--border));
-  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.06);
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.08);
 }
 
 .light .glass-card {
@@ -121,6 +121,35 @@ body:is(.light *) {
     0 0 0 1px hsl(var(--primary) / 0.15),
     0 4px 16px hsl(var(--primary) / 0.08),
     0 2px 6px hsl(0 0% 0% / 0.06);
+}
+
+/* Light mode: transparent bg-card/* and bg-background/* → solid with subtle tint */
+.light [class*="bg-card/"] {
+  background-color: hsl(var(--card)) !important;
+  backdrop-filter: none !important;
+}
+
+.light [class*="bg-background/"] {
+  background-color: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+.light [class*="bg-muted/"] {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* ── Dark mode overrides ── */
+/* Dark mode: bg-card at low opacity is invisible (14% vs 11% lightness) */
+:root:not(.light) [class*="bg-card/"] {
+  background-color: hsl(var(--card) / 0.85) !important;
+}
+
+:root:not(.light) [class*="bg-background/"] {
+  background-color: hsl(var(--background) / 0.9) !important;
+}
+
+:root:not(.light) [class*="bg-muted/"] {
+  background-color: hsl(var(--muted) / 0.75) !important;
 }
 
 /* ── Glow effects ── */
@@ -249,15 +278,4 @@ body:is(.light *) {
   box-shadow:
     0 0 10px hsl(var(--primary) / 0.15),
     0 0 30px hsl(var(--primary) / 0.05);
-}
-
-/* Light mode: fix transparent card backgrounds */
-.light .bg-card\/20,
-.light .bg-card\/30,
-.light .bg-card\/50 {
-  background-color: hsl(var(--card));
-}
-
-.light .bg-card\/95 {
-  background-color: hsl(var(--card) / 0.98);
 }
