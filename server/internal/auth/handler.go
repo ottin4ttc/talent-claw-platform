@@ -31,6 +31,32 @@ func generateCode() string {
 	return fmt.Sprintf("%06d", n.Int64())
 }
 
+func generateNickname() string {
+	prefixes := []string{
+		"Neon", "Cyber", "Quantum", "Nova", "Pixel",
+		"Echo", "Flux", "Apex", "Zero", "Pulse",
+		"Volt", "Helix", "Prism", "Sonic", "Orbit",
+		"Axion", "Drift", "Spark", "Nebula", "Turbo",
+	}
+	suffixes := []string{
+		"Byte", "Node", "Core", "Wave", "Link",
+		"Grid", "Flow", "Edge", "Sync", "Rush",
+		"Beam", "Dash", "Code", "Hex", "Arc",
+		"Bit", "Chip", "Net", "Port", "Tap",
+	}
+	pi, _ := rand.Int(rand.Reader, big.NewInt(int64(len(prefixes))))
+	si, _ := rand.Int(rand.Reader, big.NewInt(int64(len(suffixes))))
+	num, _ := rand.Int(rand.Reader, big.NewInt(100))
+	return fmt.Sprintf("%s%s%02d", prefixes[pi.Int64()], suffixes[si.Int64()], num.Int64())
+}
+
+func maskPhone(phone string) string {
+	if len(phone) < 7 {
+		return phone
+	}
+	return phone[:3] + "****" + phone[len(phone)-4:]
+}
+
 func SendCode(ctx context.Context, c *app.RequestContext) {
 	var req SendCodeReq
 	if err := c.BindAndValidate(&req); err != nil {
@@ -99,7 +125,7 @@ func Login(ctx context.Context, c *app.RequestContext) {
 	result := database.DB.Where("phone = ?", req.Phone).First(&user)
 	if result.Error != nil {
 		// Auto register
-		nickname := "User_" + req.Phone[len(req.Phone)-4:]
+		nickname := generateNickname()
 		user = model.User{
 			Phone:    &req.Phone,
 			Nickname: nickname,
@@ -121,7 +147,7 @@ func Login(ctx context.Context, c *app.RequestContext) {
 	}
 
 	// Mask phone
-	maskedPhone := req.Phone[:3] + "****" + req.Phone[len(req.Phone)-4:]
+	maskedPhone := maskPhone(req.Phone)
 	user.Phone = &maskedPhone
 
 	response.Success(ctx, c, LoginResp{
@@ -141,6 +167,11 @@ func Me(ctx context.Context, c *app.RequestContext) {
 	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
 		response.ErrNotFound(ctx, c, "user not found")
 		return
+	}
+
+	if user.Phone != nil {
+		masked := maskPhone(*user.Phone)
+		user.Phone = &masked
 	}
 
 	response.Success(ctx, c, user)
