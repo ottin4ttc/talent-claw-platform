@@ -5,8 +5,11 @@ import { cn } from "@/lib/utils";
 export function Dialog({ open, children }: { open: boolean; children: React.ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.85)" }}
+    >
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6" style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }} role="dialog" aria-modal="true">
         {children}
       </div>
     </div>
