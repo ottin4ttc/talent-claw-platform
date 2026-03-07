@@ -54,7 +54,6 @@ function UserMenu() {
         <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150" style={{ backgroundColor: "hsl(var(--card))" }}>
           <div className="border-b border-border/60 px-4 py-3">
             <p className="text-sm font-medium">{user?.nickname || user?.phone}</p>
-            <p className="text-xs text-muted-foreground">{user?.phone}</p>
           </div>
           <div className="py-1">
             <Link

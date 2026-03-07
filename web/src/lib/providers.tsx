@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { useThemeStore } from "@/stores/themeStore";
+import { useCurrentUser } from "@/hooks/useAuth";
+
+function GlobalUserLoader() {
+  useCurrentUser();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <GlobalUserLoader />
       {children}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

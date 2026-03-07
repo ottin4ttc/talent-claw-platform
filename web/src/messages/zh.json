@@ -106,6 +106,8 @@
   },
   "settings": {
     "title": "设置",
+    "nickname": "昵称",
+    "phone": "手机号",
     "version": "版本",
     "author": "作者"
   },

@@ -106,6 +106,8 @@
   },
   "settings": {
     "title": "Settings",
+    "nickname": "Nickname",
+    "phone": "Phone",
     "version": "Version",
     "author": "Author"
   },
