@@ -99,6 +99,30 @@ body:is(.light *) {
     0 2px 8px hsl(0 0% 0% / 0.2);
 }
 
+/* Light mode: use solid card bg + shadow instead of transparency */
+.light .glass {
+  background: hsl(var(--card));
+  backdrop-filter: none;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.06);
+}
+
+.light .glass-card {
+  background: hsl(var(--card));
+  backdrop-filter: none;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
+}
+
+.light .glass-card:hover {
+  background: hsl(var(--card));
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.15),
+    0 4px 16px hsl(var(--primary) / 0.08),
+    0 2px 6px hsl(0 0% 0% / 0.06);
+}
+
 /* ── Glow effects ── */
 .glow-primary {
   box-shadow:
@@ -218,4 +242,22 @@ body:is(.light *) {
   background: hsl(142 76% 36%);
   border-radius: 50%;
   box-shadow: 0 0 6px hsl(142 76% 36% / 0.6);
+}
+
+/* Light mode: soften glow effects */
+.light .glow-primary {
+  box-shadow:
+    0 0 10px hsl(var(--primary) / 0.15),
+    0 0 30px hsl(var(--primary) / 0.05);
+}
+
+/* Light mode: fix transparent card backgrounds */
+.light .bg-card\/20,
+.light .bg-card\/30,
+.light .bg-card\/50 {
+  background-color: hsl(var(--card));
+}
+
+.light .bg-card\/95 {
+  background-color: hsl(var(--card) / 0.98);
 }
