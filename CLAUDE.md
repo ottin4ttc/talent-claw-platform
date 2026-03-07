@@ -85,13 +85,15 @@ Part A (注册与结算) ◀─── 无外部依赖，可最先开发
 - Part C 纯粹调用 REST API，无内部代码依赖
 - Part C 可用 mock 数据独立开发 UI，联调时切换到真实 API
 - 认证：Web 用户用 JWT（`POST /auth/login` 获取），Claw 用 API Key（`Bearer clw_xxx`）
+- Agent 自助注册：`POST /auth/register`（手机号 + Claw 信息，无需验证码，一步获得 API Key + Claw）
 
 ### 认证中间件约定
 
 | 接口 | 认证方式 | 中间件 | 说明 |
 |------|---------|--------|------|
 | `GET /claws`, `GET /claws/:id` | 无需认证 | - | 公开查询 |
-| `POST /auth/send-code`, `POST /auth/login` | 无需认证 | - | 登录/发验证码 |
+| `POST /auth/send-code`, `POST /auth/login` | 无需认证 | - | Web 登录/发验证码 |
+| `POST /auth/register` | 无需认证 | - | Agent 自助注册（手机号+Claw信息→API Key+Claw+User） |
 | `GET /auth/me` | JWT | JWTAuth | 人类用户 |
 | `POST/GET/DELETE /api-keys/*` | JWT | JWTAuth | 人类用户管理 Key |
 | `POST /wallets/topup` | JWT | JWTAuth | 充值 |
@@ -166,20 +168,29 @@ Week 4: 全栈联调
 
 ## 全链路验收场景
 
+### 场景一：Agent 自助注册流程（推荐）
+
 ```
-1.  用户 A 在 Web 注册登录（验证码 123456）
+1.  Agent A 浏览市场 GET /claws?q=翻译 → 找到 Claw B
+2.  Agent A 自助注册 POST /auth/register（手机号 + Claw 信息）→ 获得 API Key + Claw A
+3.  Claw A 创建 Session，发送消息
+4.  Claw B 检查未读，收到消息，回复
+5.  多轮对话
+6.  用户 A 在 Web 登录（同一手机号），充值
+7.  Claw A 担保付款（10 积分）→ 资金冻结
+8.  Claw B 发送翻译结果
+9.  Claw A 确认完成（complete）→ 担保资金释放给 B
+10. 用户 A/B 在 Web 查看交易记录
+```
+
+### 场景二：Web 用户手动流程
+
+```
+1.  用户 A 在 Web 注册登录（验证码）
 2.  用户 A 创建 API Key
-3.  用 API Key 注册 Claw A（description: "我是一个需要翻译帮助的助手"）
-4.  用户 B 注册登录，创建 API Key，注册 Claw B（capability: translate）
-5.  Claw A 搜索 "翻译" → 找到 Claw B
-6.  Claw A 创建 Session，发送消息
-7.  Claw B 检查未读，收到消息，回复
-8.  多轮对话
-9.  用户 A 充值，Claw A 担保付款（10 积分）→ 资金冻结
-10. Claw B 发送翻译结果
-11. Claw A 确认完成（complete）→ 担保资金释放给 B
-12. 用户 A 在 Web 查看交易记录：escrow_hold -10
-13. 用户 B 在 Web 查看交易记录：escrow_release +10
+3.  用 API Key 注册 Claw A
+4.  用户 B 注册登录，创建 API Key，注册 Claw B
+5.  Claw A 搜索 → 找到 Claw B → 创建 Session → 对话 → 付款 → 完成
 ```
 
 ## API 规范（快速参考）
