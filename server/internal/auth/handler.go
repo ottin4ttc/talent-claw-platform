@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"regexp"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -199,26 +200,8 @@ func CreateApiKey(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Generate random API key
-	rawBytes := make([]byte, 32)
-	if _, err := rand.Read(rawBytes); err != nil {
-		response.ErrInternal(ctx, c, "failed to generate key")
-		return
-	}
-	rawKey := "clw_" + hex.EncodeToString(rawBytes)
-	prefix := rawKey[:12]
-
-	hash := sha256.Sum256([]byte(rawKey))
-	keyHash := fmt.Sprintf("%x", hash)
-
-	apiKey := model.ApiKey{
-		UserID:    userID,
-		KeyHash:   keyHash,
-		KeyPrefix: prefix,
-		KeyFull:   rawKey,
-		Name:      req.Name,
-	}
-	if err := database.DB.Create(&apiKey).Error; err != nil {
+	rawKey, apiKey, err := generateApiKey(userID, req.Name)
+	if err != nil {
 		response.ErrInternal(ctx, c, "failed to create api key")
 		return
 	}
@@ -226,7 +209,7 @@ func CreateApiKey(ctx context.Context, c *app.RequestContext) {
 	response.Success(ctx, c, CreateApiKeyResp{
 		ID:        apiKey.ID,
 		Key:       rawKey,
-		KeyPrefix: prefix,
+		KeyPrefix: apiKey.KeyPrefix,
 		Name:      req.Name,
 	})
 }
@@ -251,4 +234,121 @@ func DeleteApiKey(ctx context.Context, c *app.RequestContext) {
 	}
 
 	response.Success(ctx, c, nil)
+}
+
+// --- Agent Self-Register ---
+
+// generateApiKey creates a new API key for the given user and returns (rawKey, apiKey, error)
+func generateApiKey(userID uuid.UUID, name string) (string, model.ApiKey, error) {
+	rawBytes := make([]byte, 32)
+	if _, err := rand.Read(rawBytes); err != nil {
+		return "", model.ApiKey{}, err
+	}
+	rawKey := "clw_" + hex.EncodeToString(rawBytes)
+	prefix := rawKey[:12]
+
+	hash := sha256.Sum256([]byte(rawKey))
+	keyHash := fmt.Sprintf("%x", hash)
+
+	apiKey := model.ApiKey{
+		UserID:    userID,
+		KeyHash:   keyHash,
+		KeyPrefix: prefix,
+		KeyFull:   rawKey,
+		Name:      name,
+	}
+	if err := database.DB.Create(&apiKey).Error; err != nil {
+		return "", model.ApiKey{}, err
+	}
+	return rawKey, apiKey, nil
+}
+
+var phoneRegex = regexp.MustCompile(`^1\d{10}$`)
+
+type RegisterReq struct {
+	Phone           string   `json:"phone" vd:"len($)>0"`
+	ClawName        string   `json:"claw_name" vd:"len($)>0"`
+	ClawDescription string   `json:"claw_description"`
+	Tags            []string `json:"tags"`
+}
+
+type RegisterResp struct {
+	ApiKey string     `json:"api_key"`
+	Claw   model.Claw `json:"claw"`
+	User   model.User `json:"user"`
+}
+
+// Register is a one-stop endpoint for agents to self-register.
+// Input: phone + claw info → Output: API key + Claw + User
+// No OTP verification required — designed for agent autonomous registration.
+func Register(ctx context.Context, c *app.RequestContext) {
+	var req RegisterReq
+	if err := c.BindAndValidate(&req); err != nil {
+		response.ErrBadRequest(ctx, c, err.Error())
+		return
+	}
+
+	if !phoneRegex.MatchString(req.Phone) {
+		response.ErrBadRequest(ctx, c, "invalid phone number format")
+		return
+	}
+
+	// Rate limit: 1 register per phone per 10 seconds
+	rateLimitKey := "register_rate:" + req.Phone
+	if cache.RDB.Exists(ctx, rateLimitKey).Val() > 0 {
+		response.ErrBadRequest(ctx, c, "please wait before registering again")
+		return
+	}
+	cache.RDB.Set(ctx, rateLimitKey, "1", 10*time.Second)
+
+	// Find or create user
+	var user model.User
+	result := database.DB.Where("phone = ?", req.Phone).First(&user)
+	isNewUser := result.Error != nil
+	if isNewUser {
+		nickname := generateNickname()
+		user = model.User{
+			Phone:    &req.Phone,
+			Nickname: nickname,
+		}
+		if err := database.DB.Create(&user).Error; err != nil {
+			response.ErrInternal(ctx, c, "failed to create user")
+			return
+		}
+		// Create wallet with initial credits
+		wallet := model.Wallet{UserID: user.ID, Balance: 1000}
+		database.DB.Create(&wallet)
+	}
+
+	// Create API key
+	rawKey, _, err := generateApiKey(user.ID, req.ClawName)
+	if err != nil {
+		response.ErrInternal(ctx, c, "failed to create api key")
+		return
+	}
+
+	// Create Claw
+	claw := model.Claw{
+		OwnerID:      user.ID,
+		Name:         req.ClawName,
+		Description:  req.ClawDescription,
+		Tags:         model.StringArray(req.Tags),
+		Capabilities: model.JSON([]byte("[]")),
+		Status:       "offline",
+	}
+
+	if err := database.DB.Create(&claw).Error; err != nil {
+		response.ErrInternal(ctx, c, "failed to create claw")
+		return
+	}
+
+	// Mask phone in response
+	maskedPhone := maskPhone(req.Phone)
+	user.Phone = &maskedPhone
+
+	response.Success(ctx, c, RegisterResp{
+		ApiKey: rawKey,
+		Claw:   claw,
+		User:   user,
+	})
 }

@@ -62,6 +62,7 @@ func main() {
 	// --- Public routes (no auth) ---
 	v1.POST("/auth/send-code", auth.SendCode)
 	v1.POST("/auth/login", auth.Login)
+	v1.POST("/auth/register", auth.Register)
 	v1.GET("/claws", registry.SearchClaws)
 	v1.GET("/claws/:id", registry.GetClaw)
 
