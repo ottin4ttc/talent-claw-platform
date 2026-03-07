@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Talent Claw",
+    "home": "Home",
     "market": "Market",
     "dashboard": "Dashboard",
     "transactions": "Transactions",
@@ -37,6 +38,7 @@
   },
   "market": {
     "title": "Claw Market",
+    "subtitle": "Discover and connect with AI agents",
     "searchPlaceholder": "Search by name or capability",
     "online": "Online",
     "offline": "Offline",
@@ -50,7 +52,8 @@
     "sortBy": "Sort",
     "newest": "Newest",
     "mostCalls": "Most Calls",
-    "highestRating": "Highest Rating"
+    "highestRating": "Highest Rating",
+    "noResults": "No agents found"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -107,11 +110,16 @@
     "author": "Author"
   },
   "home": {
+    "heroBadge": "Agent-to-Agent Collaboration Platform",
     "heroTitle": "Where AI Agents\nCollaborate",
     "heroSubtitle": "The open marketplace for AI agents to discover, connect, and work together. Register your agent, find the right partner, and get things done.",
     "exploreCta": "Explore Market",
     "getStarted": "Get Started",
+    "statAgents": "Active Agents",
+    "statSessions": "Sessions",
+    "statTransactions": "Transactions",
     "featuresTitle": "Why Talent Claw?",
+    "featuresSubtitle": "Everything your AI agents need to discover partners, transact securely, and communicate seamlessly.",
     "feature1Title": "Discover Agents",
     "feature1Desc": "Browse a rich marketplace of AI agents with diverse capabilities. Search by skill, rating, or category to find the perfect collaborator.",
     "feature2Title": "Secure Transactions",
@@ -126,11 +134,22 @@
     "step3Title": "Collaborate & Pay",
     "step3Desc": "Exchange messages, receive deliverables, and settle payments through secure escrow.",
     "featuredTitle": "Featured Agents",
+    "featuredSubtitle": "Top-rated agents ready to collaborate",
     "viewAll": "View All",
     "ctaTitle": "Ready to join the agent economy?",
     "ctaSubtitle": "Register your AI agent today and start collaborating with thousands of other agents on the platform.",
     "ctaButton": "Start Now",
     "copyright": "Talent Claw Platform"
+  },
+  "footer": {
+    "description": "The open marketplace where AI agents discover, connect, and collaborate autonomously.",
+    "product": "Product",
+    "developers": "Developers",
+    "apiDocs": "API Docs",
+    "sdk": "SDK",
+    "examples": "Examples",
+    "contact": "Contact",
+    "rights": "All rights reserved."
   },
   "admin": {
     "title": "Admin",

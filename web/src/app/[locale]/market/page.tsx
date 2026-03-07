@@ -7,11 +7,25 @@ import { ClawCard } from "@/components/market/ClawCard";
 import { useClawList } from "@/hooks/useClaws";
 import type { ClawSearchParams } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { Store, SlidersHorizontal } from "lucide-react";
+import { Footer } from "@/components/layout/Footer";
+
+const SORT_OPTIONS = [
+  { value: "", labelKey: "newest" },
+  { value: "total_calls", labelKey: "mostCalls" },
+  { value: "rating_avg", labelKey: "highestRating" },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: "", labelKey: "allStatus" },
+  { value: "online", labelKey: "online" },
+  { value: "offline", labelKey: "offline" },
+] as const;
 
 export default function MarketPage() {
   const t = useTranslations("market");
   const [params, setParams] = useState<ClawSearchParams>({ page_size: 12 });
+  const [showFilters, setShowFilters] = useState(false);
   const query = useClawList(params);
 
   const claws = useMemo(
@@ -19,59 +33,174 @@ export default function MarketPage() {
     [query.data]
   );
 
+  const activeSort = params.sort_by || "";
+  const activeStatus = params.status || "";
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
-
-      <ClawSearch
-        onSearch={(q) => setParams((p) => ({ ...p, q }))}
-        onTagClick={(tag) => setParams((p) => ({ ...p, tags: tag }))}
-      />
-
-      <div className="mt-4 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{t("filterStatus")}</span>
-          <Select
-            value={params.status || ""}
-            onChange={(e) => setParams((p) => ({ ...p, status: e.target.value || undefined }))}
-          >
-            <option value="">{t("allStatus")}</option>
-            <option value="online">{t("online")}</option>
-            <option value="offline">{t("offline")}</option>
-          </Select>
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1">
+        {/* Page header */}
+        <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-7xl px-4 py-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20">
+                <Store className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">{t("title")}</h1>
+                <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{t("sortBy")}</span>
-          <Select
-            value={params.sort_by || ""}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === "created_at") setParams((p) => ({ ...p, sort_by: "created_at", order: "desc" }));
-              else if (val === "total_calls") setParams((p) => ({ ...p, sort_by: "total_calls", order: "desc" }));
-              else if (val === "rating_avg") setParams((p) => ({ ...p, sort_by: "rating_avg", order: "desc" }));
-              else setParams((p) => ({ ...p, sort_by: undefined, order: undefined }));
-            }}
-          >
-            <option value="">{t("newest")}</option>
-            <option value="total_calls">{t("mostCalls")}</option>
-            <option value="rating_avg">{t("highestRating")}</option>
-          </Select>
-        </div>
-      </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {claws.map((claw) => (
-          <ClawCard key={claw.id} claw={claw} />
-        ))}
-      </div>
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
+            {/* Sidebar filters (desktop) */}
+            <aside className="hidden w-64 shrink-0 lg:block">
+              <div className="sticky top-20 space-y-6">
+                <div className="glass-card rounded-2xl p-5">
+                  <h3 className="mb-4 text-sm font-semibold">{t("filterStatus")}</h3>
+                  <div className="flex flex-col gap-1">
+                    {STATUS_OPTIONS.map(({ value, labelKey }) => (
+                      <button
+                        key={labelKey}
+                        onClick={() => setParams((p) => ({ ...p, status: value || undefined }))}
+                        className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                          activeStatus === value
+                            ? "bg-primary/15 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {t(labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-      {query.hasNextPage && (
-        <div className="mt-8 flex justify-center">
-          <Button variant="outline" onClick={() => query.fetchNextPage()} disabled={query.isFetchingNextPage}>
-            {t("loadMore")}
-          </Button>
+                <div className="glass-card rounded-2xl p-5">
+                  <h3 className="mb-4 text-sm font-semibold">{t("sortBy")}</h3>
+                  <div className="flex flex-col gap-1">
+                    {SORT_OPTIONS.map(({ value, labelKey }) => (
+                      <button
+                        key={labelKey}
+                        onClick={() => {
+                          if (value) {
+                            setParams((p) => ({ ...p, sort_by: value, order: "desc" }));
+                          } else {
+                            setParams((p) => ({ ...p, sort_by: undefined, order: undefined }));
+                          }
+                        }}
+                        className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                          activeSort === value
+                            ? "bg-primary/15 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {t(labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main content */}
+            <div className="flex-1 space-y-6">
+              {/* Search + mobile filter toggle */}
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <ClawSearch
+                    onSearch={(q) => setParams((p) => ({ ...p, q }))}
+                    onTagClick={(tag) => setParams((p) => ({ ...p, tags: tag }))}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/50 bg-card/50 transition-colors hover:bg-muted lg:hidden"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Mobile filters */}
+              {showFilters && (
+                <div className="glass-card flex flex-wrap gap-2 rounded-2xl p-4 lg:hidden">
+                  <div className="w-full mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">{t("filterStatus")}</span>
+                  </div>
+                  {STATUS_OPTIONS.map(({ value, labelKey }) => (
+                    <button
+                      key={labelKey}
+                      onClick={() => setParams((p) => ({ ...p, status: value || undefined }))}
+                      className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
+                        activeStatus === value
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "bg-muted/50 text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+
+                  <div className="w-full mt-2 mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">{t("sortBy")}</span>
+                  </div>
+                  {SORT_OPTIONS.map(({ value, labelKey }) => (
+                    <button
+                      key={labelKey}
+                      onClick={() => {
+                        if (value) {
+                          setParams((p) => ({ ...p, sort_by: value, order: "desc" }));
+                        } else {
+                          setParams((p) => ({ ...p, sort_by: undefined, order: undefined }));
+                        }
+                      }}
+                      className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
+                        activeSort === value
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "bg-muted/50 text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Results grid */}
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {claws.map((claw) => (
+                  <ClawCard key={claw.id} claw={claw} />
+                ))}
+              </div>
+
+              {/* Empty state */}
+              {claws.length === 0 && !query.isLoading && (
+                <div className="rounded-2xl border border-dashed border-border/50 bg-card/20 py-16 text-center">
+                  <Store className="mx-auto h-12 w-12 text-muted-foreground/30" />
+                  <p className="mt-4 text-muted-foreground">{t("noResults")}</p>
+                </div>
+              )}
+
+              {/* Load more */}
+              {query.hasNextPage && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => query.fetchNextPage()}
+                    disabled={query.isFetchingNextPage}
+                    className="rounded-xl border-border/50"
+                  >
+                    {t("loadMore")}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }

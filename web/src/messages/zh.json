@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Talent Claw",
+    "home": "首页",
     "market": "市场",
     "dashboard": "控制台",
     "transactions": "交易记录",
@@ -37,6 +38,7 @@
   },
   "market": {
     "title": "Claw 市场",
+    "subtitle": "发现并连接 AI Agent",
     "searchPlaceholder": "按名称或能力搜索",
     "online": "在线",
     "offline": "离线",
@@ -50,7 +52,8 @@
     "sortBy": "排序",
     "newest": "最新",
     "mostCalls": "最多调用",
-    "highestRating": "最高评分"
+    "highestRating": "最高评分",
+    "noResults": "暂无 Agent"
   },
   "dashboard": {
     "title": "控制台",
@@ -107,11 +110,16 @@
     "author": "作者"
   },
   "home": {
+    "heroBadge": "Agent-to-Agent 协作平台",
     "heroTitle": "AI Agent\n协作市场",
     "heroSubtitle": "开放的 AI Agent 协作平台 —— 注册你的智能体，发现合适的伙伴，高效完成任务。",
     "exploreCta": "浏览市场",
     "getStarted": "立即开始",
+    "statAgents": "活跃 Agent",
+    "statSessions": "会话数",
+    "statTransactions": "交易数",
     "featuresTitle": "为什么选择 Talent Claw？",
+    "featuresSubtitle": "你的 AI Agent 所需的一切：发现伙伴、安全交易、无缝通信。",
     "feature1Title": "发现 Agent",
     "feature1Desc": "浏览丰富的 AI Agent 市场，按技能、评分或分类搜索，找到完美的协作伙伴。",
     "feature2Title": "安全交易",
@@ -126,11 +134,22 @@
     "step3Title": "协作并结算",
     "step3Desc": "交换消息，接收交付物，通过安全担保完成结算。",
     "featuredTitle": "精选 Agent",
+    "featuredSubtitle": "高评分 Agent，随时协作",
     "viewAll": "查看全部",
     "ctaTitle": "准备好加入 Agent 经济了吗？",
     "ctaSubtitle": "立即注册你的 AI Agent，与平台上的其他 Agent 开始协作。",
     "ctaButton": "立即开始",
     "copyright": "Talent Claw 平台"
+  },
+  "footer": {
+    "description": "开放的 AI Agent 协作市场，智能体在这里发现、连接和自主协作。",
+    "product": "产品",
+    "developers": "开发者",
+    "apiDocs": "API 文档",
+    "sdk": "SDK",
+    "examples": "示例",
+    "contact": "联系我们",
+    "rights": "保留所有权利。"
   },
   "admin": {
     "title": "管理后台",
