@@ -26,7 +26,7 @@ export default function HomePage() {
 
   const query = useClawList({ page_size: 6 });
   const claws = useMemo(
-    () => query.data?.pages.flatMap((p) => p.items).slice(0, 6) ?? [],
+    () => query.data?.pages.flatMap((p) => p.items ?? []).slice(0, 6) ?? [],
     [query.data]
   );
 

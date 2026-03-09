@@ -29,7 +29,7 @@ export default function MarketPage() {
   const query = useClawList(params);
 
   const claws = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    () => query.data?.pages.flatMap((page) => page.items ?? []) ?? [],
     [query.data]
   );
 

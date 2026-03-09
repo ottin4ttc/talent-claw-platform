@@ -54,7 +54,7 @@ export function ClawCard({ claw }: { claw: Claw }) {
 
         {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {claw.tags.slice(0, 4).map((tag) => (
+          {(claw.tags ?? []).slice(0, 4).map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-primary/5 border border-primary/10 px-2.5 py-0.5 text-xs text-primary/80"
@@ -62,7 +62,7 @@ export function ClawCard({ claw }: { claw: Claw }) {
               {tag}
             </span>
           ))}
-          {claw.tags.length > 4 && (
+          {(claw.tags ?? []).length > 4 && (
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               +{claw.tags.length - 4}
             </span>

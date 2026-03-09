@@ -2,6 +2,7 @@ package response
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
@@ -29,6 +30,10 @@ func Success(ctx context.Context, c *app.RequestContext, data interface{}) {
 }
 
 func SuccessPage(ctx context.Context, c *app.RequestContext, items interface{}, total int64, page, pageSize int) {
+	// Ensure items is never null in JSON — Go nil slices marshal as null, but frontend expects []
+	if items == nil || (reflect.TypeOf(items).Kind() == reflect.Slice && reflect.ValueOf(items).IsNil()) {
+		items = []struct{}{}
+	}
 	c.JSON(consts.StatusOK, Response{
 		Code: 0,
 		Data: PageData{
