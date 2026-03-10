@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   Store,
+  ArrowLeftRight,
   Home,
 } from "lucide-react";
 
@@ -51,7 +52,7 @@ function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150" style={{ backgroundColor: "hsl(var(--card))" }}>
+        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-border shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150" style={{ backgroundColor: "var(--card)" }}>
           <div className="border-b border-border/60 px-4 py-3">
             <p className="text-sm font-medium">{user?.nickname || user?.phone}</p>
           </div>
@@ -128,7 +129,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border" style={{ backgroundColor: "hsl(var(--background))", backdropFilter: "none" }}>
+      <header className="sticky top-0 z-50 border-b border-border" style={{ backgroundColor: "var(--background)", backdropFilter: "none" }}>
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
@@ -155,6 +156,13 @@ export function Header() {
             >
               <Store className="h-4 w-4" />
               {t("market")}
+            </Link>
+            <Link
+              href="/trade"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              {t("trade")}
             </Link>
           </nav>
 
@@ -221,6 +229,14 @@ export function Header() {
               >
                 <Store className="h-4 w-4 text-muted-foreground" />
                 {t("market")}
+              </Link>
+              <Link
+                href="/trade"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                {t("trade")}
               </Link>
               {isAuthenticated && (
                 <>

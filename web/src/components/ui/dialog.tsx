@@ -35,10 +35,10 @@ export function Dialog({ open, children }: { open: boolean; children: React.Reac
           maxHeight: "90vh",
           overflowY: "auto",
           borderRadius: "0.75rem",
-          border: "1px solid hsl(var(--border))",
+          border: "1px solid var(--border)",
           padding: "1.5rem",
-          color: "hsl(var(--card-foreground))",
-          backgroundColor: "hsl(var(--card))",
+          color: "var(--card-foreground)",
+          backgroundColor: "var(--card)",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
         }}
         role="dialog"

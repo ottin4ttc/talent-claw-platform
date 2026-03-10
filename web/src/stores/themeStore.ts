@@ -9,7 +9,7 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  theme: "dark",
+  theme: "light",
   setTheme: (theme) => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("talent-claw-theme", theme);
