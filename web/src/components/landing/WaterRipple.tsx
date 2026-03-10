@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 
 const MAX_RIPPLES = 30;
@@ -92,10 +91,21 @@ function createBrushTexture(): THREE.Texture {
   return tex;
 }
 
-function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number }) {
+/** Preloads all project textures; call once inside the shared Canvas */
+function usePreloadedTextures(srcs: string[]) {
+  // useTexture can accept an array
+  return useTexture(srcs);
+}
+
+/** The single scene that renders whichever project is active */
+function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
+  srcs: string[];
+  activeIndex: number;
+  maskRadius: number;
+}) {
   const { size, gl } = useThree();
   const mainMaterialRef = useRef<THREE.ShaderMaterial>(null);
-  const imageTexture = useTexture(src);
+  const textures = usePreloadedTextures(srcs);
   const brushTexture = useMemo(createBrushTexture, []);
 
   const fboRef = useRef<THREE.WebGLRenderTarget | null>(null);
@@ -106,9 +116,13 @@ function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number
   const initializedRef = useRef(false);
   const prevMouse = useRef(new THREE.Vector2());
   const currentWave = useRef(0);
-  const imageTextureRef = useRef(imageTexture);
   const sizeRef = useRef(size);
   const maskRadiusRef = useRef(maskRadius);
+  const activeIndexRef = useRef(activeIndex);
+
+  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
+  useEffect(() => { sizeRef.current = size; }, [size]);
+  useEffect(() => { maskRadiusRef.current = maskRadius; }, [maskRadius]);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -183,13 +197,9 @@ function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number
     return () => canvas.removeEventListener("pointermove", onMove);
   }, [gl]);
 
-  useEffect(() => { imageTextureRef.current = imageTexture; }, [imageTexture]);
-  useEffect(() => { sizeRef.current = size; }, [size]);
-  useEffect(() => { maskRadiusRef.current = maskRadius; }, [maskRadius]);
-
   const uniforms = useMemo(
     () => ({
-      uTexture: { value: imageTexture },
+      uTexture: { value: textures[0] ?? null },
       uDisplacement: { value: null as THREE.Texture | null },
       uResolution: { value: new THREE.Vector2(size.width, size.height) },
       uTextureSize: { value: new THREE.Vector2(1, 1) },
@@ -225,12 +235,15 @@ function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number
     gl.clear();
     gl.render(scene, cam);
 
+    const idx = activeIndexRef.current;
+    const currentTex = idx >= 0 && idx < textures.length ? textures[idx] : textures[0];
+
     const u = mainMaterialRef.current?.uniforms;
-    if (u) {
+    if (u && currentTex) {
       if (u.uDisplacement) u.uDisplacement.value = fbo.texture;
-      if (u.uTexture) u.uTexture.value = imageTextureRef.current;
+      if (u.uTexture) u.uTexture.value = currentTex;
       if (u.uResolution) u.uResolution.value.set(sizeRef.current.width, sizeRef.current.height);
-      const img = imageTextureRef.current.image as HTMLImageElement;
+      const img = currentTex.image as HTMLImageElement;
       if (u.uTextureSize && img?.width && img?.height) u.uTextureSize.value.set(img.width, img.height);
       if (u.uMaskRadius) u.uMaskRadius.value = maskRadiusRef.current;
       if (u.uTime) u.uTime.value = timeRef.current;
@@ -254,33 +267,30 @@ function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number
   );
 }
 
-const emptySubscribe = () => () => {};
+export interface SharedCanvasProps {
+  srcs: string[];
+  activeIndex: number;
+  maskRadius: number;
+}
 
-export function WaterRipple({ src, maskRadius }: { src: string; maskRadius: number }) {
-  const isMounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+/**
+ * Single shared Canvas for all project ripple effects.
+ * Parent positions this over the currently-active project image via CSS.
+ */
+export function SharedRippleCanvas({ srcs, activeIndex, maskRadius }: SharedCanvasProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || activeIndex < 0) return null;
 
   return (
-    <div
-      className="absolute inset-0 w-full h-full"
-      style={{ willChange: "transform", transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+    <Canvas
+      dpr={1}
+      gl={{ antialias: false, alpha: true, powerPreference: "high-performance", stencil: false, depth: false }}
+      style={{ width: "100%", height: "100%" }}
+      frameloop="always"
     >
-      {isMounted && (
-        <Canvas
-          dpr={1}
-          gl={{ antialias: false, alpha: true, powerPreference: "high-performance", stencil: false, depth: false }}
-          style={{ width: "100%", height: "100%" }}
-          frameloop="always"
-        >
-          <WaterRippleScene src={src} maskRadius={maskRadius} />
-          <EffectComposer multisampling={0}>
-            <Bloom intensity={0.35} luminanceThreshold={0.65} luminanceSmoothing={0.8} mipmapBlur levels={3} />
-          </EffectComposer>
-        </Canvas>
-      )}
-    </div>
+      <SharedRippleScene srcs={srcs} activeIndex={activeIndex} maskRadius={maskRadius} />
+    </Canvas>
   );
 }

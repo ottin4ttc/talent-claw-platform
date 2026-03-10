@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useLayoutEffect, useState } from "react";
+import { useEffect, useRef, useLayoutEffect, useState, useMemo, useCallback } from "react";
 import { useOverlay } from "@/lib/overlay-context";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -14,7 +15,7 @@ import {
   useAnimationFrame,
   AnimatePresence,
 } from "motion/react";
-import { WaterRipple } from "./WaterRipple";
+import { SharedRippleCanvas } from "./WaterRipple";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -143,12 +144,14 @@ interface Project {
 }
 
 const projects: Project[] = [
-  { id: "0", titleUp: "The Primal", titleDown: "Era", image: "/img/primal-era.png", description: "Before ClawOS, the world was digital chaos. People crouched in the wilderness, nurturing raw, unrefined sparks of intelligence \u2014 each Raw Claw unique, untamed, and full of wild potential." },
-  { id: "1", titleUp: "The", titleDown: "Awakening", image: "/img/awakening.png", description: "ClawOS arrives and the chaos gains structure. Raw Claws are armed with tools, trained with purpose, and begin evolving into specialized Agents \u2014 the scattered sparks become disciplined flames." },
-  { id: "2", titleUp: "The Tribal", titleDown: "Age", image: "/img/tribal-age.png", description: "Tasks grow complex, and lone Agents can no longer keep up. Users assemble Claude Teams \u2014 coordinated squads of specialists in code, design, strategy \u2014 forming efficient private tribes." },
-  { id: "3", titleUp: "The Trade", titleDown: "Age", image: "/img/trade-age.png", description: "When your tribe needs to build a rocket, you hire talent beyond your walls. Agents cross boundaries, trade expertise, and an open marketplace of intelligent labor emerges \u2014 the Agent economy is born." },
-  { id: "4", titleUp: "The", titleDown: "Civilization", image: "/img/civilization.png", description: "The final horizon: a self-evolving, interconnected society of Agents. Not just tools or trades, but a civilization with its own rules, ethics, and collective intelligence \u2014 a living neural network across the globe." },
+  { id: "0", titleUp: "The Primal", titleDown: "Era", image: "/img/primal-era.webp", description: "Before ClawOS, the world was digital chaos. People crouched in the wilderness, nurturing raw, unrefined sparks of intelligence \u2014 each Raw Claw unique, untamed, and full of wild potential." },
+  { id: "1", titleUp: "The", titleDown: "Awakening", image: "/img/awakening.webp", description: "ClawOS arrives and the chaos gains structure. Raw Claws are armed with tools, trained with purpose, and begin evolving into specialized Agents \u2014 the scattered sparks become disciplined flames." },
+  { id: "2", titleUp: "The Tribal", titleDown: "Age", image: "/img/tribal-age.webp", description: "Tasks grow complex, and lone Agents can no longer keep up. Users assemble Claude Teams \u2014 coordinated squads of specialists in code, design, strategy \u2014 forming efficient private tribes." },
+  { id: "3", titleUp: "The Trade", titleDown: "Age", image: "/img/trade-age.webp", description: "When your tribe needs to build a rocket, you hire talent beyond your walls. Agents cross boundaries, trade expertise, and an open marketplace of intelligent labor emerges \u2014 the Agent economy is born." },
+  { id: "4", titleUp: "The", titleDown: "Civilization", image: "/img/civilization.webp", description: "The final horizon: a self-evolving, interconnected society of Agents. Not just tools or trades, but a civilization with its own rules, ethics, and collective intelligence \u2014 a living neural network across the globe." },
 ];
+
+const PROJECT_SRCS = projects.map((p) => p.image);
 
 function ProjectOverlay({ project, onClose }: { project: Project | null; onClose: () => void }) {
   useEffect(() => {
@@ -173,8 +176,7 @@ function ProjectOverlay({ project, onClose }: { project: Project | null; onClose
             exit={{ scale: 1.05 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={project.image} alt={`${project.titleUp} ${project.titleDown}`} className="h-full w-full object-cover" />
+            <Image src={project.image} alt={`${project.titleUp} ${project.titleDown}`} fill className="object-cover" sizes="100vw" priority />
             <div className="absolute inset-0 bg-black/40" />
           </motion.div>
           <motion.div
@@ -213,13 +215,20 @@ function ProjectOverlay({ project, onClose }: { project: Project | null; onClose
   );
 }
 
-function ProjectItem({ project, index, onHover, onClick }: { project: Project; index: number; onHover: (isHovering: boolean) => void; onClick: () => void }) {
+function ProjectItem({ project, index, onHover, onClick, canvasWrapperRef, maskRadius, onMaskRadiusChange }: {
+  project: Project;
+  index: number;
+  onHover: (isHovering: boolean) => void;
+  onClick: () => void;
+  canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
+  maskRadius: number;
+  onMaskRadiusChange: (r: number) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const innerWrapperRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
-  const [maskRadius, setMaskRadius] = useState(0);
   const isEven = index % 2 === 0;
 
   const xTo = useRef<gsap.QuickToFunc | null>(null);
@@ -227,10 +236,10 @@ function ProjectItem({ project, index, onHover, onClick }: { project: Project; i
   const scaleTo = useRef<gsap.QuickToFunc | null>(null);
 
   useEffect(() => {
-    if (!canvasWrapperRef.current) return;
-    xTo.current = gsap.quickTo(canvasWrapperRef.current, "x", { duration: 0.8, ease: "power3.out" });
-    yTo.current = gsap.quickTo(canvasWrapperRef.current, "y", { duration: 0.8, ease: "power3.out" });
-    scaleTo.current = gsap.quickTo(canvasWrapperRef.current, "scale", { duration: 0.6, ease: "power2.out" });
+    if (!innerWrapperRef.current) return;
+    xTo.current = gsap.quickTo(innerWrapperRef.current, "x", { duration: 0.8, ease: "power3.out" });
+    yTo.current = gsap.quickTo(innerWrapperRef.current, "y", { duration: 0.8, ease: "power3.out" });
+    scaleTo.current = gsap.quickTo(innerWrapperRef.current, "scale", { duration: 0.6, ease: "power2.out" });
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -258,8 +267,8 @@ function ProjectItem({ project, index, onHover, onClick }: { project: Project; i
         end: "top -20%",
         scrub: 1.5,
         invalidateOnRefresh: true,
-        onUpdate: (self) => setMaskRadius(self.progress * 1200),
-        onLeaveBack: () => setMaskRadius(0),
+        onUpdate: (self) => onMaskRadiusChange(self.progress * 1200),
+        onLeaveBack: () => onMaskRadiusChange(0),
       },
     });
     maskTl.to({}, { duration: 1 });
@@ -271,6 +280,7 @@ function ProjectItem({ project, index, onHover, onClick }: { project: Project; i
       .to(desc, { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.6");
 
     return () => { maskTl.kill(); textTl.kill(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -291,11 +301,25 @@ function ProjectItem({ project, index, onHover, onClick }: { project: Project; i
             onMouseLeave={handleMouseLeave}
           >
             <div
-              ref={canvasWrapperRef}
+              ref={(node) => {
+                (innerWrapperRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+                (canvasWrapperRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+              }}
               className="absolute inset-0 w-full h-full"
-              style={{ willChange: "transform", transformStyle: "preserve-3d", backfaceVisibility: "hidden", transform: "scale(1.15)" }}
+              style={{ willChange: "transform", transform: "scale(1.15)" }}
             >
-              <WaterRipple src={project.image} maskRadius={maskRadius} />
+              {/* CSS fallback — always visible for all projects */}
+              <div
+                className="absolute inset-0 w-full h-full"
+                style={{
+                  backgroundImage: `url(${project.image})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  maskImage: `radial-gradient(circle ${maskRadius}px at 50% 50%, black 0%, black 70%, transparent 100%)`,
+                  WebkitMaskImage: `radial-gradient(circle ${maskRadius}px at 50% 50%, black 0%, black 70%, transparent 100%)`,
+                  filter: "saturate(0.3) sepia(0.6) hue-rotate(120deg) brightness(0.65) contrast(1.3)",
+                }}
+              />
             </div>
           </div>
           <div className={`flex flex-col md:w-2/5 ${isEven ? "" : "md:text-right"}`}>
@@ -317,7 +341,114 @@ function ProjectItem({ project, index, onHover, onClick }: { project: Project; i
 export function Projects() {
   const [isCursorVisible, setIsCursorVisible] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [activeIdx, setActiveIdx] = useState<number>(-1);
+  const [maskRadii, setMaskRadii] = useState<number[]>(() => projects.map(() => 0));
   const { setIsOverlayOpen } = useOverlay();
+
+  // Refs to each project's inner canvas wrapper (the GSAP-animated div)
+  const canvasWrapperRefs = useMemo(
+    () => projects.map(() => ({ current: null }) as React.MutableRefObject<HTMLDivElement | null>),
+    []
+  );
+
+  // The floating Canvas container that moves to follow the active item
+  const floatingRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Position the single Canvas over the active project's wrapper
+  const repositionCanvas = useCallback(() => {
+    const floating = floatingRef.current;
+    const section = sectionRef.current;
+    if (!floating || !section || activeIdx < 0) {
+      if (floating) floating.style.display = "none";
+      return;
+    }
+    const wrapper = canvasWrapperRefs[activeIdx]?.current;
+    if (!wrapper) {
+      floating.style.display = "none";
+      return;
+    }
+    const sectionRect = section.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    floating.style.display = "block";
+    floating.style.top = `${wrapperRect.top - sectionRect.top}px`;
+    floating.style.left = `${wrapperRect.left - sectionRect.left}px`;
+    floating.style.width = `${wrapperRect.width}px`;
+    floating.style.height = `${wrapperRect.height}px`;
+  }, [activeIdx, canvasWrapperRefs]);
+
+  // Reposition on scroll, resize, and when activeIdx changes
+  useEffect(() => {
+    repositionCanvas();
+    const onScroll = () => repositionCanvas();
+    const onResize = () => repositionCanvas();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [repositionCanvas]);
+
+  // Also reposition every frame via rAF for smooth tracking during GSAP hover animations
+  useEffect(() => {
+    let rafId: number;
+    const loop = () => {
+      repositionCanvas();
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [repositionCanvas]);
+
+  // IntersectionObserver: pick the single most-centered visible project
+  const visibleIndices = useRef(new Set<number>());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const pickActive = useCallback(() => {
+    const viewportCenter = window.innerHeight / 2;
+    let bestIdx = -1;
+    let bestDist = Infinity;
+    for (const idx of visibleIndices.current) {
+      const el = itemRefs.current[idx];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      const center = rect.top + rect.height / 2;
+      const dist = Math.abs(center - viewportCenter);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = idx;
+      }
+    }
+    setActiveIdx(bestIdx);
+  }, []);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const idx = Number((entry.target as HTMLElement).dataset.projectIdx);
+          if (isNaN(idx)) continue;
+          if (entry.isIntersecting) {
+            visibleIndices.current.add(idx);
+          } else {
+            visibleIndices.current.delete(idx);
+          }
+        }
+        pickActive();
+      },
+      { rootMargin: "100px 0px", threshold: 0.3 }
+    );
+
+    const onScroll = () => pickActive();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      observerRef.current?.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [pickActive]);
 
   const handleProjectClick = (project: Project) => {
     setIsCursorVisible(false);
@@ -330,10 +461,22 @@ export function Projects() {
     setIsOverlayOpen(false);
   };
 
+  const activeMaskRadius = activeIdx >= 0 ? maskRadii[activeIdx] : 0;
+
   return (
-    <section id="projects" className="projects bg-background relative py-24">
+    <section ref={sectionRef} id="projects" className="projects bg-background relative py-24">
       <BlobCursor isVisible={isCursorVisible} />
       <ProjectOverlay project={selectedProject} onClose={handleClose} />
+
+      {/* Single shared Canvas — positioned over the active project */}
+      <div
+        ref={floatingRef}
+        className="absolute pointer-events-none"
+        style={{ display: "none", zIndex: 1, overflow: "hidden", borderRadius: "9999px" }}
+      >
+        <SharedRippleCanvas srcs={PROJECT_SRCS} activeIndex={activeIdx} maskRadius={activeMaskRadius} />
+      </div>
+
       <div className="pb-16">
         <VelocityText baseVelocity={80} className="text-[clamp(3rem,8vw,10rem)] font-medium italic tracking-tight text-foreground uppercase px-8">
           <span className="font-serif font-thin">Evolution</span>&nbsp;
@@ -341,7 +484,20 @@ export function Projects() {
       </div>
       <div className="flex flex-col">
         {projects.map((project, index) => (
-          <ProjectItem key={project.id} project={project} index={index} onHover={setIsCursorVisible} onClick={() => handleProjectClick(project)} />
+          <div key={project.id} data-project-idx={index} ref={(el) => {
+            itemRefs.current[index] = el;
+            if (el && observerRef.current) observerRef.current.observe(el);
+          }}>
+            <ProjectItem
+              project={project}
+              index={index}
+              onHover={setIsCursorVisible}
+              onClick={() => handleProjectClick(project)}
+              canvasWrapperRef={canvasWrapperRefs[index]}
+              maskRadius={maskRadii[index]}
+              onMaskRadiusChange={(r) => setMaskRadii((prev) => { const next = [...prev]; next[index] = r; return next; })}
+            />
+          </div>
         ))}
       </div>
     </section>

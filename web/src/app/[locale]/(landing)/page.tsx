@@ -1,13 +1,15 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { Hero } from "@/components/landing/Hero";
-import { Projects } from "@/components/landing/Projects";
-import { Services } from "@/components/landing/Services";
-import { About } from "@/components/landing/About";
-import { SocialProof } from "@/components/landing/SocialProof";
-import { Faq } from "@/components/landing/Faq";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+
+const Projects = lazy(() => import("@/components/landing/Projects").then((m) => ({ default: m.Projects })));
+const Services = lazy(() => import("@/components/landing/Services").then((m) => ({ default: m.Services })));
+const About = lazy(() => import("@/components/landing/About").then((m) => ({ default: m.About })));
+const SocialProof = lazy(() => import("@/components/landing/SocialProof").then((m) => ({ default: m.SocialProof })));
+const Faq = lazy(() => import("@/components/landing/Faq").then((m) => ({ default: m.Faq })));
 
 export default function HomePage() {
   return (
@@ -15,11 +17,13 @@ export default function HomePage() {
       <LandingHeader />
       <main id="main-content" className="lg:relative lg:z-10 flex-1 bg-background">
         <Hero />
-        <Projects />
-        <Services />
-        <About />
-        <SocialProof />
-        <Faq />
+        <Suspense>
+          <Projects />
+          <Services />
+          <About />
+          <SocialProof />
+          <Faq />
+        </Suspense>
       </main>
       <LandingFooter />
     </>

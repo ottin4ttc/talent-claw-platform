@@ -11,16 +11,9 @@ if (typeof window !== "undefined") {
 function SplitText({ children }: { children: string }) {
   return (
     <>
-      {children.split(" ").map((word, wi) => (
-        <span key={wi} className="inline-block whitespace-nowrap">
-          {word.split("").map((char, ci) => (
-            <span key={ci} className="char inline-block">
-              {char}
-            </span>
-          ))}
-          {wi < children.split(" ").length - 1 && (
-            <span className="char inline-block">&nbsp;</span>
-          )}
+      {children.split(" ").map((word, wi, arr) => (
+        <span key={wi} className="word inline-block whitespace-nowrap">
+          {word}{wi < arr.length - 1 ? "\u00A0" : ""}
         </span>
       ))}
     </>
@@ -38,7 +31,7 @@ function ServiceItem({ title, index }: { title: string; index: number }) {
   const itemRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const overlayInnerRef = useRef<HTMLDivElement>(null);
-  const charsRef = useRef<HTMLSpanElement[]>([]);
+  const wordsRef = useRef<HTMLSpanElement[]>([]);
 
   const animationDefaults = { duration: 0.6, ease: "expo" };
 
@@ -95,24 +88,24 @@ function ServiceItem({ title, index }: { title: string; index: number }) {
       .set(overlayInnerRef.current, { y: edge === "top" ? "101%" : "-101%" }, 0)
       .to([overlayRef.current, overlayInnerRef.current], { y: "0%" }, 0);
 
-    if (charsRef.current.length > 0) {
+    if (wordsRef.current.length > 0) {
       tl.fromTo(
-        charsRef.current,
+        wordsRef.current,
         { y: 0 },
         {
           y: -32,
           duration: 0.15,
           ease: "sine.out",
-          stagger: { each: 0.01, from: "start" },
+          stagger: { each: 0.03, from: "start" },
         },
         0
       ).to(
-        charsRef.current,
+        wordsRef.current,
         {
           y: 0,
           duration: 0.2,
           ease: "sine.inOut",
-          stagger: { each: 0.01, from: "start" },
+          stagger: { each: 0.03, from: "start" },
         },
         0.15
       );
@@ -130,7 +123,7 @@ function ServiceItem({ title, index }: { title: string; index: number }) {
       rect.height
     );
 
-    gsap.set(charsRef.current, { y: 0 });
+    gsap.set(wordsRef.current, { y: 0 });
 
     gsap
       .timeline({ defaults: animationDefaults })
@@ -138,16 +131,15 @@ function ServiceItem({ title, index }: { title: string; index: number }) {
       .to(overlayInnerRef.current, { y: edge === "top" ? "101%" : "-101%" }, 0);
   };
 
-  const chars = title.split("").map((char, i) => (
+  const words = title.split(" ").map((word, i, arr) => (
     <span
       key={i}
       ref={(el) => {
-        if (el) charsRef.current[i] = el;
+        if (el) wordsRef.current[i] = el;
       }}
       className="inline-block"
-      style={{ whiteSpace: char === " " ? "pre" : undefined }}
     >
-      {char}
+      {word}{i < arr.length - 1 ? "\u00A0" : ""}
     </span>
   ));
 
@@ -178,7 +170,7 @@ function ServiceItem({ title, index }: { title: string; index: number }) {
           style={{ transform: "translateY(-101%)" }}
         >
           <span className="text-[clamp(1.5rem,4vw,4rem)] font-light tracking-tight text-background">
-            {chars}
+            {words}
           </span>
           <svg
             className="w-8 h-8 md:w-12 md:h-12 text-background"
@@ -208,12 +200,12 @@ export function Services() {
     if (!titleRef.current || !sectionRef.current || !contentRef.current) return;
 
     const title = titleRef.current;
-    const chars = title.querySelectorAll(".char");
+    const words = title.querySelectorAll(".word");
     const section = sectionRef.current;
     const content = contentRef.current;
 
-    gsap.fromTo(
-      chars,
+    const anim = gsap.fromTo(
+      words,
       {
         willChange: "transform",
         transformOrigin: "50% 100%",
@@ -223,7 +215,7 @@ export function Services() {
         ease: "power3.in",
         opacity: 1,
         scaleY: 1,
-        stagger: 0.05,
+        stagger: 0.12,
         scrollTrigger: {
           trigger: section,
           start: "top top",
@@ -236,7 +228,8 @@ export function Services() {
     );
 
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      anim.scrollTrigger?.kill();
+      anim.kill();
     };
   }, []);
 

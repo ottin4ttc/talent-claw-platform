@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { motion } from "motion/react";
 import { useThemeStore } from "@/stores/themeStore";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 const fragmentShader = `
@@ -259,6 +259,19 @@ const defaultEndColors = {
 export function Hero({ startColors, endColors }: HeroProps = {}) {
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const mergedStartColors = {
     color1: startColors?.color1 ?? defaultStartColors.color1,
@@ -273,7 +286,7 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
   };
 
   return (
-    <section id="hero" className="hero relative h-screen w-full bg-background overflow-hidden">
+    <section ref={sectionRef} id="hero" className="hero relative h-screen w-full bg-background overflow-hidden">
       <div className="absolute inset-0 z-0">
         <Canvas
           className="h-full w-full opacity-50 saturate-110 md:opacity-80"
@@ -285,6 +298,7 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
           }}
           resize={{ scroll: false }}
           gl={{ antialias: false, powerPreference: "high-performance" }}
+          frameloop={isVisible ? "always" : "never"}
         >
           <ShaderPlane
             isDark={isDark}
