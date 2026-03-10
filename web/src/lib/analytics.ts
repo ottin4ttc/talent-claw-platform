@@ -11,7 +11,7 @@ export function initAnalytics() {
   SDK.init({
     app_id: 20012964,
     channel_domain: "https://gator.volces.com",
-    log: process.env.NODE_ENV === "development",
+    log: false,
     autotrack: true,
     spa: true,
   });
