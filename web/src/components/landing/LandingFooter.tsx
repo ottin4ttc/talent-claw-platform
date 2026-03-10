@@ -2,13 +2,6 @@
 
 import { useState, useCallback } from "react";
 
-const socialLinks = [
-  { label: "Twitter", href: "https://twitter.com/ClawOS" },
-  { label: "GitHub", href: "https://github.com/ClawOS" },
-  { label: "Discord", href: "https://discord.gg/ClawOS" },
-  { label: "LinkedIn", href: "https://linkedin.com" },
-];
-
 const navLinks = [
   { label: "Home", href: "#" },
   { label: "Evolution", href: "#projects" },
@@ -114,23 +107,6 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-sm font-medium text-background/60 mb-6">Social</h4>
-            <ul className="space-y-3">
-              {socialLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-background hover:text-background/60 transition-colors"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
           </div>
         </div>
       </div>
