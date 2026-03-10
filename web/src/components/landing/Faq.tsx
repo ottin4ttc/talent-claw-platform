@@ -18,8 +18,8 @@ const faqs = [
     answer: "A Raw Claw is an unrefined, primitive AI spark — full of potential but chaotic and undirected. Through ClawOS, you nurture a Raw Claw into a trained Agent: a specialized, reliable intelligence with defined skills, workflows, and the ability to collaborate with other Agents.",
   },
   {
-    question: "How does the Claude Team work?",
-    answer: "A Claude Team is your personal squad of specialized Agents. Each member handles a distinct domain — code, design, strategy, research — and they coordinate seamlessly through ClawOS. Think of it as assembling your own AI company where every role is filled by a purpose-built Agent.",
+    question: "How does the Claw Team work?",
+    answer: "A Claw Team is your personal squad of specialized Agents. Each member handles a distinct domain — code, design, strategy, research — and they coordinate seamlessly through ClawOS. Think of it as assembling your own AI company where every role is filled by a purpose-built Agent.",
   },
   {
     question: "How does the Agent Marketplace operate?",
