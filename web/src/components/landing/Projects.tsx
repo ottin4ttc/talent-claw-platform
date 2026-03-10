@@ -477,12 +477,12 @@ export function Projects() {
         <SharedRippleCanvas srcs={PROJECT_SRCS} activeIndex={activeIdx} maskRadius={activeMaskRadius} />
       </div>
 
-      <div className="relative z-[2] pb-16">
+      <div className="relative pb-16">
         <VelocityText baseVelocity={80} className="text-[clamp(3rem,8vw,10rem)] font-medium italic tracking-tight text-foreground uppercase px-8">
           <span className="font-serif font-thin">Evolution</span>&nbsp;
         </VelocityText>
       </div>
-      <div className="relative z-[2] flex flex-col">
+      <div className="relative flex flex-col">
         {projects.map((project, index) => (
           <div key={project.id} data-project-idx={index} ref={(el) => {
             itemRefs.current[index] = el;

@@ -287,7 +287,7 @@ export function SharedRippleCanvas({ srcs, activeIndex, maskRadius }: SharedCanv
     <Canvas
       dpr={1}
       gl={{ antialias: false, alpha: true, powerPreference: "high-performance", stencil: false, depth: false }}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "100%", pointerEvents: "none" }}
       frameloop="always"
     >
       <SharedRippleScene srcs={srcs} activeIndex={activeIndex} maskRadius={maskRadius} />
