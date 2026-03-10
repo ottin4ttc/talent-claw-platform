@@ -288,8 +288,6 @@ function ProjectItem({ project, index, onHover, onClick, canvasWrapperRef, maskR
       ref={containerRef}
       className="group cursor-pointer py-16 md:py-24"
       onClick={onClick}
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
     >
       <div className="mx-auto max-w-360 px-6 sm:px-12 lg:px-24 2xl:max-w-450 3xl:max-w-550">
         <div className={`flex flex-col gap-8 ${isEven ? "md:flex-row" : "md:flex-row-reverse"} md:items-center md:gap-16`}>
