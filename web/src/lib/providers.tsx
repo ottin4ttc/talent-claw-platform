@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { useThemeStore } from "@/stores/themeStore";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { initAnalytics } from "@/lib/analytics";
 
 function GlobalUserLoader() {
   useCurrentUser();
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    initAnalytics();
     const saved = window.localStorage.getItem("talent-claw-theme");
     if (saved === "dark" || saved === "light") {
       setTheme(saved);
