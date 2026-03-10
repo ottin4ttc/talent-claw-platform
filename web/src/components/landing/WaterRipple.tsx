@@ -179,6 +179,8 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
     const canvas = gl.domElement;
     const onMove = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
+      // Ignore if pointer is outside the canvas bounds
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
       const x = e.clientX - rect.left - rect.width / 2;
       const y = -(e.clientY - rect.top - rect.height / 2);
       if (Math.abs(x - prevMouse.current.x) > 4 || Math.abs(y - prevMouse.current.y) > 4) {
@@ -193,8 +195,9 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
         prevMouse.current.set(x, y);
       }
     };
-    canvas.addEventListener("pointermove", onMove);
-    return () => canvas.removeEventListener("pointermove", onMove);
+    // Listen on window so ripples work even when canvas has pointer-events: none
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
   }, [gl]);
 
   const uniforms = useMemo(
