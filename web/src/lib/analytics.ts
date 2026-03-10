@@ -6,6 +6,7 @@ let initialized = false;
 
 export function initAnalytics() {
   if (initialized || typeof window === "undefined") return;
+  if (process.env.NODE_ENV !== "production") return;
 
   SDK.init({
     app_id: 20012964,
