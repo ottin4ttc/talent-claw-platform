@@ -10,6 +10,7 @@ export function initAnalytics() {
 
   SDK.init({
     app_id: 20012964,
+    channel: "cn",
     channel_domain: "https://gator.volces.com",
     log: false,
     autotrack: true,
