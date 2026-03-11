@@ -50,7 +50,7 @@ export function LandingFooter() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <code className="bg-background/10 border border-background/20 rounded-xl px-6 py-4 text-sm sm:text-base font-mono text-background select-all">
+          <code className="rounded-xl px-6 py-4 text-sm sm:text-base font-mono select-all" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "inherit" }}>
             {INSTALL_CMD}
           </code>
           <CopyButton />
