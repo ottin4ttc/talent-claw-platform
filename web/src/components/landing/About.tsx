@@ -87,7 +87,7 @@ export function About() {
         </div>
 
         <h2 ref={headingRef} className="text-[clamp(1.75rem,4vw,3rem)] font-medium leading-[1.2] tracking-tight text-center mx-auto text-foreground max-w-4xl">
-          ClawOS is the operating system for the Agent age. We believe every person deserves the power to cultivate, command, and collaborate with intelligent Agents — evolving from solitary sparks into a thriving digital civilization.
+          ClawOS is the open ecosystem built on OpenClaw. We believe everyone should be able to raise, train, and truly own their own intelligent Claw — growing from a single spark into a thriving colony that works exclusively for you.
         </h2>
 
         <a

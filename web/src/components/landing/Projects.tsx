@@ -144,11 +144,11 @@ interface Project {
 }
 
 const projects: Project[] = [
-  { id: "0", titleUp: "The Primal", titleDown: "Era", image: "/img/primal-era.webp", description: "Before ClawOS, the world was digital chaos. People crouched in the wilderness, nurturing raw, unrefined sparks of intelligence \u2014 each Raw Claw unique, untamed, and full of wild potential." },
-  { id: "1", titleUp: "The", titleDown: "Awakening", image: "/img/awakening.webp", description: "ClawOS arrives and the chaos gains structure. Raw Claws are armed with tools, trained with purpose, and begin evolving into specialized Agents \u2014 the scattered sparks become disciplined flames." },
-  { id: "2", titleUp: "The Tribal", titleDown: "Age", image: "/img/tribal-age.webp", description: "Tasks grow complex, and lone Agents can no longer keep up. Users assemble Claw Teams \u2014 coordinated squads of specialists in code, design, strategy \u2014 forming efficient private tribes." },
-  { id: "3", titleUp: "The Trade", titleDown: "Age", image: "/img/trade-age.webp", description: "When your tribe needs to build a rocket, you hire talent beyond your walls. Agents cross boundaries, trade expertise, and an open marketplace of intelligent labor emerges \u2014 the Agent economy is born." },
-  { id: "4", titleUp: "The", titleDown: "Civilization", image: "/img/civilization.webp", description: "The final horizon: a self-evolving, interconnected society of Agents. Not just tools or trades, but a civilization with its own rules, ethics, and collective intelligence \u2014 a living neural network across the globe." },
+  { id: "0", titleUp: "The Primal", titleDown: "Era", image: "/img/primal-era.webp", description: "Before ClawOS, raw intelligence scattered like wild larvae in the open sea. Each OpenClaw was a raw potential \u2014 alive, unrefined, waiting for the right hands to nurture it." },
+  { id: "1", titleUp: "The", titleDown: "Awakening", image: "/img/awakening.webp", description: "ClawOS brings structure to the chaos. Your raw Claw learns to respond, adapt, and specialize \u2014 the wild spark becomes a trained companion that understands your intent." },
+  { id: "2", titleUp: "The Tribal", titleDown: "Age", image: "/img/tribal-age.webp", description: "One Claw isn\u2019t enough. You assemble a swarm \u2014 specialists in code, design, research, strategy \u2014 a coordinated colony where each member knows its role and amplifies the others." },
+  { id: "3", titleUp: "The Trade", titleDown: "Age", image: "/img/trade-age.webp", description: "When your colony needs expertise beyond its walls, the marketplace opens. Trained Claws cross boundaries, trade skills, and an open economy of intelligent labor is born." },
+  { id: "4", titleUp: "The", titleDown: "Civilization", image: "/img/civilization.webp", description: "The final horizon: an interconnected ecosystem of Claws evolving together. Not just tools or trades, but a living network with its own rhythms \u2014 where human intent and Claw intelligence co-evolve across the globe." },
 ];
 
 const PROJECT_SRCS = projects.map((p) => p.image);

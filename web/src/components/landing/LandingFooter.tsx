@@ -65,29 +65,25 @@ export function LandingFooter() {
         <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-8">
           <div>
             <span className="text-4xl font-medium tracking-tight">ClawOS</span>
-            <p className="mt-4 text-background/60 text-4xl">Arm everyone with Agents.</p>
+            <p className="mt-4 text-background/60 text-4xl">Raise your own Claw.</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-16 lg:gap-24">
             <div>
             <h4 className="text-sm font-medium text-background/60 mb-6">Location</h4>
-            <div className="mb-6">
-              <p className="font-medium mb-1">Beijing, China</p>
-              <p className="text-background/60 text-sm">Global Headquarters</p>
-            </div>
             <div>
-              <p className="font-medium mb-1">Worldwide</p>
-              <p className="text-background/60 text-sm">Offices around the globe</p>
+              <p className="font-medium mb-1">Earth</p>
+              <p className="text-background/60 text-sm">Everywhere, for everyone</p>
             </div>
           </div>
 
           <div>
             <h4 className="text-sm font-medium text-background/60 mb-6">Capabilities</h4>
             <ul className="space-y-3">
-              <li><span className="text-background">Agent Cultivation</span></li>
-              <li><span className="text-background">Team Orchestration</span></li>
-              <li><span className="text-background">Agent Marketplace</span></li>
-              <li><span className="text-background">Civilization Infra</span></li>
+              <li><span className="text-background">Claw Cultivation</span></li>
+              <li><span className="text-background">Swarm Orchestration</span></li>
+              <li><span className="text-background">Claw Marketplace</span></li>
+              <li><span className="text-background">Ecosystem Infra</span></li>
             </ul>
           </div>
 
@@ -130,7 +126,7 @@ export function LandingFooter() {
           </p>
 
           <p className="text-sm text-background/40">
-            Built for the Agent age by ClawOS
+            Built for the Claw age by ClawOS
           </p>
         </div>
       </div>

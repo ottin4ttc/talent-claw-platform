@@ -21,10 +21,10 @@ function SplitText({ children }: { children: string }) {
 }
 
 const services = [
-  { id: 1, title: "Agent Cultivation" },
-  { id: 2, title: "Team Orchestration" },
-  { id: 3, title: "Agent Marketplace" },
-  { id: 4, title: "Civilization Infrastructure" },
+  { id: 1, title: "Claw Cultivation" },
+  { id: 2, title: "Swarm Orchestration" },
+  { id: 3, title: "Claw Marketplace" },
+  { id: 4, title: "Ecosystem Infrastructure" },
 ];
 
 function ServiceItem({ title, index }: { title: string; index: number }) {
@@ -247,7 +247,7 @@ export function Services() {
           ref={titleRef}
           className="text-center text-[clamp(2.5rem,7vw,7rem)] font-medium leading-[1.1] tracking-tight text-foreground max-w-350"
         >
-          <SplitText>We arm every person with the power of Agents.</SplitText>
+          <SplitText>Everyone deserves to raise their own Claw.</SplitText>
         </h2>
       </div>
 

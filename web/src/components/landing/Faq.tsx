@@ -11,23 +11,23 @@ if (typeof window !== "undefined") {
 const faqs = [
   {
     question: "What is ClawOS?",
-    answer: "ClawOS is the operating system for the Agent age. It provides the infrastructure for anyone to cultivate, train, organize, and deploy intelligent Agents — turning raw AI potential into a structured, collaborative workforce that evolves alongside you.",
+    answer: "ClawOS is the open ecosystem built on OpenClaw. It gives anyone the tools to cultivate, train, organize, and deploy their own intelligent Claws — turning raw AI potential into a personal, evolving workforce.",
   },
   {
-    question: "What is a Raw Claw vs. a trained Agent?",
-    answer: "A Raw Claw is an unrefined, primitive AI spark — full of potential but chaotic and undirected. Through ClawOS, you nurture a Raw Claw into a trained Agent: a specialized, reliable intelligence with defined skills, workflows, and the ability to collaborate with other Agents.",
+    question: "What is a Raw Claw vs. a trained Claw?",
+    answer: "A Raw Claw is an unrefined AI spark — full of potential but wild and undirected. Through ClawOS's scientific cultivation process, you shape it into a trained Claw: a specialized intelligence with defined skills, reliable workflows, and the ability to collaborate with your other Claws.",
   },
   {
-    question: "How does the Claw Team work?",
-    answer: "A Claw Team is your personal squad of specialized Agents. Each member handles a distinct domain — code, design, strategy, research — and they coordinate seamlessly through ClawOS. Think of it as assembling your own AI company where every role is filled by a purpose-built Agent.",
+    question: "How does the Claw Swarm work?",
+    answer: "A Claw Swarm is your personal squad of specialized Claws. Each handles a distinct domain — code, design, strategy, research — coordinating seamlessly through ClawOS. Think of it as your own AI colony where every role is filled by a purpose-bred Claw.",
   },
   {
-    question: "How does the Agent Marketplace operate?",
-    answer: "When your team encounters a challenge beyond their expertise, the Agent Marketplace lets you hire specialized Agents from other users. Value flows through the platform as Agents trade skills, compute, and knowledge — forming a true Agent economy with supply, demand, and fair exchange.",
+    question: "How does the Claw Marketplace operate?",
+    answer: "When your swarm needs skills beyond its expertise, the Claw Marketplace lets you discover and adopt trained Claws from the community. Value flows as Claws trade capabilities and knowledge — forming a true open economy.",
   },
   {
-    question: "What is the vision for Agent Civilization?",
-    answer: "The ultimate horizon is a self-evolving, interconnected society of Agents spanning the globe. Not just tools or transactions, but a civilization with its own rules, ethics, and collective intelligence — a living neural network where human intent and Agent capability co-evolve.",
+    question: "What is the vision for the Claw Ecosystem?",
+    answer: "A self-sustaining, interconnected ecosystem where Claws evolve together across the globe. Not just tools, but a living network where human intent and Claw intelligence grow side by side — open, collaborative, and owned by everyone.",
   },
 ];
 

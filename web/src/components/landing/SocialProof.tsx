@@ -92,13 +92,13 @@ export function SocialProof() {
       <div className="px-6 sm:px-12 lg:px-24 max-w-360 2xl:max-w-450 3xl:max-w-550 mx-auto">
         <div ref={headerRef} className="flex items-center justify-between mb-12 lg:mb-16">
           <h2 className="text-3xl lg:text-4xl font-medium tracking-tight text-foreground">
-            Trusted by early builders
+            Trusted by early cultivators
           </h2>
           <a
             href="#contact"
             className="hidden sm:inline-flex items-center justify-center px-6 py-3 rounded-full bg-foreground text-background text-sm font-medium transition-opacity hover:opacity-80"
           >
-            Build with us
+            Cultivate with us
           </a>
         </div>
 
@@ -107,7 +107,7 @@ export function SocialProof() {
             <div>
               <QuoteIcon className="w-10 h-10 text-foreground/20 mb-6" />
               <blockquote className="text-xl lg:text-2xl font-medium leading-snug text-foreground">
-                ClawOS turned our scattered AI experiments into a coordinated Agent team — shipping what used to take weeks in days.
+                ClawOS turned our scattered AI experiments into a coordinated Claw colony — what used to take weeks now ships in days.
               </blockquote>
               <div className="mt-6">
                 <p className="font-semibold text-foreground">Max Xiao</p>
@@ -140,17 +140,17 @@ export function SocialProof() {
             <div className="flex-1">
               <p className="text-3xl lg:text-4xl font-semibold text-foreground">Top 1%</p>
               <p className="text-foreground/60 mt-2">
-                Agent Orchestration<br />& AI Infrastructure
+                Claw Orchestration<br />& Open Infrastructure
               </p>
             </div>
             <div className="mt-auto pt-6">
-              <p className="text-sm font-medium text-foreground">Pioneering the Agent Economy</p>
+              <p className="text-sm font-medium text-foreground">Pioneering the Claw Economy</p>
             </div>
           </div>
 
           <div className="lg:col-span-3 bg-muted/50 rounded-2xl p-8 flex flex-col">
             <p className="text-xl lg:text-2xl font-medium leading-relaxed text-foreground max-w-3xl flex-1">
-              We helped Meridian deploy a 12-Agent team that automated their entire product pipeline — from research to launch — in under one quarter.
+              We helped Meridian cultivate a 12-Claw swarm that automated their entire product pipeline — from research to launch — in under one quarter.
             </p>
             <div className="flex items-center justify-between mt-auto pt-6">
               <span className="text-xl font-semibold text-foreground">Meridian</span>

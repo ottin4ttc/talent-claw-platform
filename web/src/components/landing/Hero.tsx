@@ -318,7 +318,7 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
               transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
               style={{ transformOrigin: "center bottom", transformStyle: "preserve-3d" }}
             >
-              Raise your own
+              Raise your
             </motion.span>
           </span>
           <span className="block overflow-hidden pb-[0.1em]">
@@ -340,7 +340,7 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
               transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1], delay: 0.7 }}
               style={{ transformOrigin: "center bottom", transformStyle: "preserve-3d" }}
             >
-              <em className="font-serif">Not someone else&#39;s.</em>
+              <em className="font-serif">Your way.</em>
             </motion.span>
           </span>
         </h1>
@@ -351,9 +351,9 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 1, ease: [0.25, 1, 0.5, 1], delay: 1.2 }}
         >
-          ClawOS helps you create, train, and evolve an Agent that&#39;s
-          truly yours — one that grows with you, thinks your way,
-          and works for you alone.
+          ClawOS is the open ecosystem where anyone can cultivate their own
+          OpenClaw — nurture it from a raw spark into a powerful, personal
+          intelligence that thinks your way and evolves at your pace.
         </motion.p>
       </div>
     </section>
