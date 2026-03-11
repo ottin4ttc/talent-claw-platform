@@ -1,9 +1,10 @@
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, invalidate } from "@react-three/fiber";
 import { motion } from "motion/react";
 import { useThemeStore } from "@/stores/themeStore";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import * as THREE from "three";
 
 const fragmentShader = `
@@ -52,8 +53,13 @@ float beam(float y,float t,float i){
 }
 void main(){
   vec2 uv=gl_FragCoord.xy/iResolution.y,su=gl_FragCoord.xy/iResolution.xy;
+
+  // === WAVE SCALE (larger = waves appear smaller/zoomed out) ===
   float sc=1.1;
+
   float ar=iResolution.x/iResolution.y;
+
+  // === LEFT/RIGHT OFFSET (larger = waves move more to the right) ===
   float xOffset=0.7;
   uv=uv*sc-vec2(ar*xOffset*sc,.5*sc);
   uv=rot(uv,radians(mix(-55.,-120.,iScroll)));
@@ -125,14 +131,14 @@ interface ShaderPlaneProps {
 function ShaderPlane({ isDark, startColors, endColors }: ShaderPlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { size, gl } = useThree();
-  const defaultStart = { color1: "#6DD0E0", color2: "#52C4AD", color3: "#5AB893" };
-  const defaultEnd = { color1: "#52C4AD", color2: "#5AB893", color3: "#6DD0E0" };
+  const defaultStart = { color1: "#7DD8E8", color2: "#5BC4D8", color3: "#3BB5CC" };
+  const defaultEnd = { color1: "#5BC4D8", color2: "#3BB5CC", color3: "#7DD8E8" };
 
   const uniforms = useMemo(
     () => ({
       iTime: { value: 0 },
       iResolution: { value: new THREE.Vector2(window.innerWidth * Math.min(window.devicePixelRatio, 0.5), window.innerHeight * Math.min(window.devicePixelRatio, 0.5)) },
-      isDark: { value: 0.0 },
+      isDark: { value: 1.0 },
       iScroll: { value: 0.0 },
       color1Start: { value: new THREE.Vector3(...hexToRgb(startColors?.color1 ?? defaultStart.color1)) },
       color2Start: { value: new THREE.Vector3(...hexToRgb(startColors?.color2 ?? defaultStart.color2)) },
@@ -150,6 +156,7 @@ function ShaderPlane({ isDark, startColors, endColors }: ShaderPlaneProps) {
       const material = meshRef.current.material as THREE.ShaderMaterial;
       if (material.uniforms.isDark) {
         material.uniforms.isDark.value = isDark ? 1.0 : 0.0;
+        invalidate();
       }
     }
   }, [isDark]);
@@ -177,6 +184,7 @@ function ShaderPlane({ isDark, startColors, endColors }: ShaderPlaneProps) {
           const scrollProgress = Math.min(1, window.scrollY / window.innerHeight);
           const eased = scrollProgress * scrollProgress * (3 - 2 * scrollProgress);
           material.uniforms.iScroll.value = eased;
+          invalidate();
         }
       }
     };
@@ -245,15 +253,15 @@ export interface HeroProps {
 }
 
 const defaultStartColors = {
-  color1: "#6DD0E0",
-  color2: "#52C4AD",
-  color3: "#5AB893",
+  color1: "#7DD8E8",
+  color2: "#5BC4D8",
+  color3: "#3BB5CC",
 };
 
 const defaultEndColors = {
-  color1: "#52C4AD",
-  color2: "#5AB893",
-  color3: "#6DD0E0",
+  color1: "#5BC4D8",
+  color2: "#3BB5CC",
+  color3: "#7DD8E8",
 };
 
 export function Hero({ startColors, endColors }: HeroProps = {}) {
@@ -266,7 +274,10 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        setIsVisible(entry?.isIntersecting ?? false);
+        if (entry?.isIntersecting) invalidate();
+      },
       { threshold: 0 }
     );
     observer.observe(el);
@@ -307,6 +318,23 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
           />
         </Canvas>
       </div>
+
+      {/* Brand logo — scrolls with hero content */}
+      <motion.div
+        id="hero-brand-logo"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="absolute top-5 left-6 sm:top-8 sm:left-12 lg:left-24 z-10"
+      >
+        <Image
+          src={isDark ? "/img/clawos-logo-dark.svg" : "/img/clawos-logo.svg"}
+          alt="ClawOS"
+          width={120}
+          height={22}
+          className="h-5 sm:h-6 w-auto"
+        />
+      </motion.div>
 
       <div className="relative z-10 mx-auto flex h-full max-w-360 flex-col justify-start pt-44 px-6 text-left sm:px-12 sm:pt-48 md:justify-center md:pt-0 lg:px-24 2xl:max-w-450 3xl:max-w-550" style={{ perspective: "1200px" }}>
         <h1 className="text-[clamp(3rem,8vw,12rem)] leading-[1.05] tracking-tight text-foreground">

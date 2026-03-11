@@ -11,9 +11,16 @@ if (typeof window !== "undefined") {
 function SplitText({ children }: { children: string }) {
   return (
     <>
-      {children.split(" ").map((word, wi, arr) => (
-        <span key={wi} className="word inline-block whitespace-nowrap">
-          {word}{wi < arr.length - 1 ? "\u00A0" : ""}
+      {children.split(" ").map((word, wi) => (
+        <span key={wi} className="inline-block whitespace-nowrap">
+          {word.split("").map((char, ci) => (
+            <span key={ci} className="char inline-block">
+              {char}
+            </span>
+          ))}
+          {wi < children.split(" ").length - 1 && (
+            <span className="char inline-block">&nbsp;</span>
+          )}
         </span>
       ))}
     </>
@@ -200,12 +207,12 @@ export function Services() {
     if (!titleRef.current || !sectionRef.current || !contentRef.current) return;
 
     const title = titleRef.current;
-    const words = title.querySelectorAll(".word");
+    const chars = title.querySelectorAll(".char");
     const section = sectionRef.current;
     const content = contentRef.current;
 
-    const anim = gsap.fromTo(
-      words,
+    gsap.fromTo(
+      chars,
       {
         willChange: "transform",
         transformOrigin: "50% 100%",
@@ -215,7 +222,7 @@ export function Services() {
         ease: "power3.in",
         opacity: 1,
         scaleY: 1,
-        stagger: 0.12,
+        stagger: 0.05,
         scrollTrigger: {
           trigger: section,
           start: "top top",
@@ -228,8 +235,7 @@ export function Services() {
     );
 
     return () => {
-      anim.scrollTrigger?.kill();
-      anim.kill();
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     };
   }, []);
 

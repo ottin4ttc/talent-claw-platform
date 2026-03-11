@@ -126,7 +126,7 @@ export function SocialProof() {
           </div>
 
           <div className="lg:col-span-3 row-span-2">
-            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-2xl bg-[#f9e8e0]">
+            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-2xl bg-[#eaf6fa]">
               <Image
                 src="/img/myclaw-showcase.webp"
                 alt="MyClaw AI Chat Interface Showcase"
