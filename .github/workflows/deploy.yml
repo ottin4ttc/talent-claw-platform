@@ -31,7 +31,8 @@ jobs:
             # Ensure shared network exists
             docker network create talent-claw_default 2>/dev/null || true
 
-            # Sync nginx config
+            # Remove old conflicting config and sync new nginx config
+            rm -f /etc/nginx/sites-enabled/talentclaw-api
             cp nginx/trade.talentclaw.ai.conf /etc/nginx/sites-enabled/trade.talentclaw.ai.conf
             nginx -t && nginx -s reload
 
