@@ -4,7 +4,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "${SERVER_PORT:-8081}:8080"
+      - "127.0.0.1:8081:8080"
     environment:
       SERVER_PORT: "8080"
       DB_HOST: postgres
@@ -36,7 +36,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "127.0.0.1:3000:3000"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 15s
