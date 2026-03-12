@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import { useRef, useEffect, useMemo, useSyncExternalStore, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import Image from "next/image";
 
-const MAX_RIPPLES = 30;
-const BRUSH_SIZE = 100;
-const FBO_SCALE = 0.5;
+const MAX_RIPPLES = 20;
+const BRUSH_SIZE = 80;
+const FBO_SCALE = 0.25;
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed * 9999) * 10000;
@@ -53,7 +54,7 @@ const fragmentShader = `
   vec3 applyDuotone(vec3 c) {
     c = clamp((c - 0.5) * 1.2 + 0.5, 0.0, 1.0);
     float lum = pow(dot(c, vec3(0.299, 0.587, 0.114)), 0.9);
-    vec3 shadow = vec3(0.02, 0.10, 0.08), highlight = vec3(0.70, 0.96, 0.86);
+    vec3 shadow = vec3(0.08, 0.15, 0.22), highlight = vec3(0.78, 0.92, 0.98);
     vec3 duo = mix(shadow, highlight, smoothstep(0.0, 1.0, lum));
     float shift = (c.r - c.b) * 0.1;
     duo.r += shift; duo.b -= shift * 0.5;
@@ -77,35 +78,24 @@ const fragmentShader = `
 `;
 
 function createBrushTexture(): THREE.Texture {
-  const canvas = Object.assign(document.createElement("canvas"), { width: 128, height: 128 });
+  const canvas = Object.assign(document.createElement("canvas"), { width: 64, height: 64 });
   const ctx = canvas.getContext("2d")!;
-  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
   g.addColorStop(0, "rgba(255,255,255,1)");
   g.addColorStop(0.3, "rgba(255,255,255,0.5)");
   g.addColorStop(0.7, "rgba(255,255,255,0.1)");
   g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillRect(0, 0, 64, 64);
   const tex = new THREE.CanvasTexture(canvas);
   tex.needsUpdate = true;
   return tex;
 }
 
-/** Preloads all project textures; call once inside the shared Canvas */
-function usePreloadedTextures(srcs: string[]) {
-  // useTexture can accept an array
-  return useTexture(srcs);
-}
-
-/** The single scene that renders whichever project is active */
-function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
-  srcs: string[];
-  activeIndex: number;
-  maskRadius: number;
-}) {
-  const { size, gl } = useThree();
+function WaterRippleScene({ src, maskRadius }: { src: string; maskRadius: number }) {
+  const { size, gl, invalidate } = useThree();
   const mainMaterialRef = useRef<THREE.ShaderMaterial>(null);
-  const textures = usePreloadedTextures(srcs);
+  const imageTexture = useTexture(src);
   const brushTexture = useMemo(createBrushTexture, []);
 
   const fboRef = useRef<THREE.WebGLRenderTarget | null>(null);
@@ -116,13 +106,10 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
   const initializedRef = useRef(false);
   const prevMouse = useRef(new THREE.Vector2());
   const currentWave = useRef(0);
+  const imageTextureRef = useRef(imageTexture);
   const sizeRef = useRef(size);
   const maskRadiusRef = useRef(maskRadius);
-  const activeIndexRef = useRef(activeIndex);
-
-  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
-  useEffect(() => { sizeRef.current = size; }, [size]);
-  useEffect(() => { maskRadiusRef.current = maskRadius; }, [maskRadius]);
+  const hasActiveRipplesRef = useRef(false);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -176,11 +163,9 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
   }, [size.width, size.height]);
 
   useEffect(() => {
-    const canvas = gl.domElement;
     const onMove = (e: PointerEvent) => {
+      const canvas = gl.domElement;
       const rect = canvas.getBoundingClientRect();
-      // Ignore if pointer is outside the canvas bounds
-      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
       const x = e.clientX - rect.left - rect.width / 2;
       const y = -(e.clientY - rect.top - rect.height / 2);
       if (Math.abs(x - prevMouse.current.x) > 4 || Math.abs(y - prevMouse.current.y) > 4) {
@@ -193,16 +178,24 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
           r.mesh.scale.setScalar(1.5);
         }
         prevMouse.current.set(x, y);
+        hasActiveRipplesRef.current = true;
+        invalidate();
       }
     };
-    // Listen on window so ripples work even when canvas has pointer-events: none
-    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointermove", onMove);
     return () => window.removeEventListener("pointermove", onMove);
-  }, [gl]);
+  }, [gl, invalidate]);
+
+  useEffect(() => { imageTextureRef.current = imageTexture; }, [imageTexture]);
+  useEffect(() => { sizeRef.current = size; }, [size]);
+  useEffect(() => {
+    maskRadiusRef.current = maskRadius;
+    invalidate();
+  }, [maskRadius, invalidate]);
 
   const uniforms = useMemo(
     () => ({
-      uTexture: { value: textures[0] ?? null },
+      uTexture: { value: imageTexture },
       uDisplacement: { value: null as THREE.Texture | null },
       uResolution: { value: new THREE.Vector2(size.width, size.height) },
       uTextureSize: { value: new THREE.Vector2(1, 1) },
@@ -223,30 +216,37 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
     timeRef.current += delta;
     const ts = delta * 60;
 
+    let anyVisible = false;
     ripplesRef.current.forEach(({ mesh, material }) => {
       if (mesh.visible) {
         mesh.rotation.z += 0.02 * ts;
         material.opacity *= Math.pow(0.96, ts);
         mesh.scale.x = mesh.scale.x * 0.982 + 0.108;
         mesh.scale.y = mesh.scale.y * 0.982 + 0.108;
-        if (material.opacity < 0.002) mesh.visible = false;
+        if (material.opacity < 0.002) {
+          mesh.visible = false;
+        } else {
+          anyVisible = true;
+        }
       }
     });
+
+    if (anyVisible) {
+      invalidate();
+    }
+    hasActiveRipplesRef.current = anyVisible;
 
     const prev = gl.getRenderTarget();
     gl.setRenderTarget(fbo);
     gl.clear();
     gl.render(scene, cam);
 
-    const idx = activeIndexRef.current;
-    const currentTex = idx >= 0 && idx < textures.length ? textures[idx] : textures[0];
-
     const u = mainMaterialRef.current?.uniforms;
-    if (u && currentTex) {
+    if (u) {
       if (u.uDisplacement) u.uDisplacement.value = fbo.texture;
-      if (u.uTexture) u.uTexture.value = currentTex;
+      if (u.uTexture) u.uTexture.value = imageTextureRef.current;
       if (u.uResolution) u.uResolution.value.set(sizeRef.current.width, sizeRef.current.height);
-      const img = currentTex.image as HTMLImageElement;
+      const img = imageTextureRef.current.image as HTMLImageElement;
       if (u.uTextureSize && img?.width && img?.height) u.uTextureSize.value.set(img.width, img.height);
       if (u.uMaskRadius) u.uMaskRadius.value = maskRadiusRef.current;
       if (u.uTime) u.uTime.value = timeRef.current;
@@ -270,30 +270,60 @@ function SharedRippleScene({ srcs, activeIndex, maskRadius }: {
   );
 }
 
-export interface SharedCanvasProps {
-  srcs: string[];
-  activeIndex: number;
-  maskRadius: number;
+const emptySubscribe = () => () => {};
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
 }
 
-/**
- * Single shared Canvas for all project ripple effects.
- * Parent positions this over the currently-active project image via CSS.
- */
-export function SharedRippleCanvas({ srcs, activeIndex, maskRadius }: SharedCanvasProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+export function WaterRipple({ src, maskRadius }: { src: string; maskRadius: number }) {
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+  const isMobile = useIsMobile();
 
-  if (!mounted || activeIndex < 0) return null;
+  if (isMobile) {
+    return (
+      <div className="absolute inset-0 w-full h-full">
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="object-cover"
+          style={{
+            filter: "contrast(1.1) saturate(0.15) sepia(0.4) brightness(0.9) hue-rotate(180deg)",
+            clipPath: `circle(${Math.min(maskRadius / 2, 600)}px at 50% 50%)`,
+            transition: "clip-path 0.3s ease-out",
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <Canvas
-      dpr={1}
-      gl={{ antialias: false, alpha: true, powerPreference: "high-performance", stencil: false, depth: false }}
-      style={{ width: "100%", height: "100%", pointerEvents: "none" }}
-      frameloop="always"
+    <div
+      className="absolute inset-0 w-full h-full"
+      style={{ willChange: "transform", transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
     >
-      <SharedRippleScene srcs={srcs} activeIndex={activeIndex} maskRadius={maskRadius} />
-    </Canvas>
+      {isMounted && (
+        <Canvas
+          dpr={1}
+          gl={{ antialias: false, alpha: true, powerPreference: "high-performance", stencil: false, depth: false }}
+          style={{ width: "100%", height: "100%" }}
+          frameloop="demand"
+        >
+          <WaterRippleScene src={src} maskRadius={maskRadius} />
+        </Canvas>
+      )}
+    </div>
   );
 }

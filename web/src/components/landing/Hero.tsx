@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame, useThree, invalidate } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { motion } from "motion/react";
 import { useThemeStore } from "@/stores/themeStore";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -130,7 +130,7 @@ interface ShaderPlaneProps {
 
 function ShaderPlane({ isDark, startColors, endColors }: ShaderPlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const { size, gl } = useThree();
+  const { size, gl, invalidate } = useThree();
   const defaultStart = { color1: "#7DD8E8", color2: "#5BC4D8", color3: "#3BB5CC" };
   const defaultEnd = { color1: "#5BC4D8", color2: "#3BB5CC", color3: "#7DD8E8" };
 
@@ -276,7 +276,6 @@ export function Hero({ startColors, endColors }: HeroProps = {}) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry?.isIntersecting ?? false);
-        if (entry?.isIntersecting) invalidate();
       },
       { threshold: 0 }
     );

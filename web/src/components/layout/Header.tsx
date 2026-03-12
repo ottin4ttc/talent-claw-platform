@@ -158,7 +158,7 @@ export function Header() {
               {t("market")}
             </Link>
             <Link
-              href="/trade"
+              href="/"
               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
             >
               <ArrowLeftRight className="h-4 w-4" />
@@ -231,7 +231,7 @@ export function Header() {
                 {t("market")}
               </Link>
               <Link
-                href="/trade"
+                href="/"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
               >

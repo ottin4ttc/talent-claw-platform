@@ -120,7 +120,7 @@ export function Faq() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="bg-background py-24 lg:py-32">
+    <section ref={sectionRef} id="faq" className="bg-background py-24 lg:py-32">
       <div className="px-6 sm:px-12 lg:px-24 max-w-4xl mx-auto">
         <h2
           ref={titleRef}

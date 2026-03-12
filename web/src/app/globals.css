@@ -68,28 +68,47 @@
   --ring: hsl(174 84% 45%);
 }
 
-/* ── Landing page: ClawOS monochrome palette ── */
-/* Landing always uses light (white) by default, matching ClawOS */
+/* ── Landing page: ClawOS blue-tinted palette ── */
 .landing {
   --background: #ffffff;
   --foreground: #0a0a0a;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-  --border: #e5e5e5;
-  --ring: #0066ff;
+  --muted: #f4f9fb;
+  --muted-foreground: #8a9da6;
+  --border: #dfedf2;
+  --ring: #3ec1d6;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
   --primary: #0a0a0a;
   --primary-foreground: #ffffff;
-  --secondary: #f5f5f5;
+  --secondary: #f4f9fb;
   --secondary-foreground: #0a0a0a;
-  --accent: #f5f5f5;
+  --accent: #f4f9fb;
   --accent-foreground: #0a0a0a;
-  --input: #e5e5e5;
+  --input: #dfedf2;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
+}
+
+.landing.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --muted: #111d22;
+  --muted-foreground: #92c8d8;
+  --border: #1e3845;
+  --ring: #5cd5e8;
+  --card: #0a0a0a;
+  --card-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #0a0a0a;
+  --secondary: #111d22;
+  --secondary-foreground: #fafafa;
+  --accent: #111d22;
+  --accent-foreground: #fafafa;
+  --input: #1e3845;
+  --popover: #0a0a0a;
+  --popover-foreground: #fafafa;
 }
 
 * {
@@ -119,16 +138,16 @@ body:is(.dark *) {
 body:has(.landing) {
   --background: #ffffff;
   --foreground: #0a0a0a;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-  --border: #e5e5e5;
-  --ring: #0066ff;
+  --muted: #f4f9fb;
+  --muted-foreground: #8a9da6;
+  --border: #dfedf2;
+  --ring: #3ec1d6;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
   --primary: #0a0a0a;
   --primary-foreground: #ffffff;
-  background: #ffffff !important;
-  color: #0a0a0a;
+  background: var(--background) !important;
+  color: var(--foreground);
 }
 
 /* ── Grid pattern background ── */

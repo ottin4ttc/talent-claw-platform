@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useOverlay } from "@/lib/overlay-context";
+import { useThemeStore } from "@/stores/themeStore";
+import { ChevronUp } from "lucide-react";
+import Image from "next/image";
 
 const sections = [
   { id: "hero", label: "Home" },
@@ -13,33 +16,55 @@ const sections = [
   { id: "contact", label: "Contact" },
 ];
 
-const menuItems = [
-  { label: "Home", href: "#" },
-  { label: "Evolution", href: "#projects" },
-  { label: "Capabilities", href: "#services-menu" },
-  { label: "Mission", href: "#about" },
-  { label: "Proof", href: "#social-proof" },
-  { label: "Contact", href: "#contact" },
+interface DropdownItem {
+  title: string;
+  target: string;
+}
+
+interface NavItem {
+  label: string;
+  dropdown: DropdownItem[];
+}
+
+const navItems: NavItem[] = [
+  {
+    label: "Evolution",
+    dropdown: [
+      { title: "Primal Era", target: "project-0" },
+      { title: "Awakening", target: "project-1" },
+      { title: "Tribal Age", target: "project-2" },
+      { title: "Trade Age", target: "project-3" },
+      { title: "Civilization", target: "project-4" },
+    ],
+  },
+  {
+    label: "More",
+    dropdown: [
+      { title: "Capabilities", target: "services-menu" },
+      { title: "Mission", target: "about" },
+      { title: "Proof", target: "social-proof" },
+      { title: "FAQ", target: "faq" },
+    ],
+  },
 ];
 
 export function LandingHeader() {
-  const [activeSection, setActiveSection] = useState("Home");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [, setActiveSection] = useState("Home");
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [showNavLogo, setShowNavLogo] = useState(false);
   const { isOverlayOpen } = useOverlay();
+  const { theme } = useThemeStore();
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + window.innerHeight / 3;
 
-      const isNearBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 100;
+      const isNearBottom =
+        window.scrollY + window.innerHeight >=
+        document.documentElement.scrollHeight - 100;
       if (isNearBottom) {
         setActiveSection("Contact");
         return;
@@ -49,7 +74,9 @@ export function LandingHeader() {
         const section = sections[i];
         if (!section) continue;
         if (section.id === "contact") continue;
-        const element = document.querySelector(`.${section.id}`) || document.getElementById(section.id);
+        const element =
+          document.querySelector(`.${section.id}`) ||
+          document.getElementById(section.id);
         if (element) {
           const { offsetTop } = element as HTMLElement;
           if (scrollPosition >= offsetTop) {
@@ -63,112 +90,182 @@ export function LandingHeader() {
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handleLogoVisibility = () => {
+      const heroLogo = document.getElementById("hero-brand-logo");
+      if (heroLogo) {
+        const rect = heroLogo.getBoundingClientRect();
+        setShowNavLogo(rect.bottom < 0);
+      } else {
+        setShowNavLogo(window.scrollY > 150);
+      }
+    };
+
+    const onScroll = () => {
+      handleScroll();
+      handleLogoVisibility();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const scrollTo = useCallback((target: string) => {
+    const doScroll = () => {
+      if (target === "top") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      if (target === "contact") {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+        return;
+      }
+      const el = document.getElementById(target);
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    };
+    setActiveDropdown(null);
+    requestAnimationFrame(doScroll);
+  }, []);
+
+  const logoSrc = mounted && theme === "dark" ? "/img/clawos-logo-dark.svg" : "/img/clawos-logo.svg";
 
   return (
     <AnimatePresence>
       {!isOverlayOpen && (
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed top-0 left-0 right-0 z-50 px-4 py-6 sm:px-12 sm:py-12 lg:px-24"
-        >
-      <div className="mx-auto flex max-w-360 items-center justify-between gap-4 2xl:max-w-450 3xl:max-w-550">
-        <motion.a
-          href="/"
-          className="flex h-12 sm:h-16 font-semibold tracking-tight text-base sm:text-xl items-center justify-center rounded-xl sm:rounded-2xl text-foreground liquid-glass px-4 sm:px-5 shrink-0"
-          style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          ClawOS
-        </motion.a>
-
-        <div className="relative h-12 sm:h-16">
-          <motion.div
-            className="absolute top-0 right-0 w-48 sm:w-60 liquid-glass rounded-xl sm:rounded-2xl overflow-hidden"
-            style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              height: isMenuOpen ? "auto" : (isMobile ? 48 : 64),
-            }}
-            transition={{
-              duration: 0.4,
-              ease: [0.22, 1, 0.36, 1],
-              height: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
-            }}
-          >
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex h-12 sm:h-16 w-full items-center justify-between gap-4 px-4 sm:px-5 text-foreground"
-            >
-              <span className="text-base sm:text-lg font-medium">{activeSection}</span>
-              <motion.div
-                className="relative h-5 w-5 sm:h-6 sm:w-6"
-                animate={{ rotate: isMenuOpen ? 45 : 0 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <span className="absolute left-1/2 top-0 h-5 sm:h-6 w-[1.5px] -translate-x-1/2 bg-current" />
-                <span className="absolute left-0 top-1/2 h-[1.5px] w-5 sm:w-6 -translate-y-1/2 bg-current" />
-            </motion.div>
-          </button>
-
+        <>
           <AnimatePresence>
-            {isMenuOpen && (
-              <motion.nav
-                className="px-5 pb-5"
+            {activeDropdown && (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, delay: 0.1 }}
-              >
-                <ul className="flex flex-col gap-1">
-                  {menuItems.map((item, index) => (
-                    <motion.li
-                      key={item.label}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: 0.05 * index,
-                        ease: [0.22, 1, 0.36, 1]
-                      }}
-                    >
-                      <a
-                        href={item.href}
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setActiveSection(item.label);
-                        }}
-                        className={`block py-1.5 text-lg font-medium transition-colors hover:text-foreground ${
-                          activeSection === item.label
-                            ? "text-foreground underline underline-offset-4"
-                            : "text-foreground/50"
-                        }`}
-                      >
-                        {item.label}
-                      </a>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.nav>
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                onClick={() => setActiveDropdown(null)}
+              />
             )}
           </AnimatePresence>
-          </motion.div>
-        </div>
-      </div>
-    </motion.header>
+
+          <motion.nav
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed bottom-6 sm:bottom-10 left-0 right-0 z-50 px-3 sm:px-6 pointer-events-none flex justify-center"
+          >
+            <div className="pointer-events-auto inline-block">
+              <div
+                className="liquid-glass rounded-2xl sm:rounded-3xl overflow-hidden"
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                {/* Dropdown content */}
+                <AnimatePresence>
+                  {activeDropdown && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-1.5 sm:p-2">
+                        {navItems
+                          .find((item) => item.label === activeDropdown)
+                          ?.dropdown.map((item, index) => (
+                            <motion.button
+                              key={item.title}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.2, delay: index * 0.03 }}
+                              onPointerDown={(e) => {
+                                e.preventDefault();
+                                scrollTo(item.target);
+                              }}
+                              className="block w-full text-left px-3 py-2 sm:px-4 sm:py-2 rounded-xl hover:bg-foreground/10 transition-colors cursor-pointer"
+                            >
+                              <span className="text-xs sm:text-sm font-medium text-foreground">
+                                {item.title}
+                              </span>
+                            </motion.button>
+                          ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Nav bar */}
+                <div className="py-1.5 sm:py-2 pr-2 sm:pr-3 transition-all duration-300 ease-out" style={{ paddingLeft: showNavLogo ? 6 : 2 }}>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                {/* Home / Logo — appears when hero logo scrolls away */}
+                <button
+                  onClick={() => scrollTo("top")}
+                  className="flex items-center justify-center h-8 sm:h-10 overflow-hidden transition-all duration-300 ease-out"
+                  aria-label="Home"
+                  style={{
+                    width: showNavLogo ? 80 : 0,
+                    opacity: showNavLogo ? 1 : 0,
+                    paddingInline: showNavLogo ? 4 : 0,
+                    pointerEvents: showNavLogo ? "auto" : "none",
+                  }}
+                >
+                  <Image
+                    src={logoSrc}
+                    alt="ClawOS"
+                    width={100}
+                    height={18}
+                    className="h-4 sm:h-5 w-auto shrink-0"
+                  />
+                </button>
+
+                    {/* Dropdown triggers */}
+                    {navItems.map((item) => (
+                      <div
+                        key={item.label}
+                        className="relative"
+                        onMouseEnter={() => setActiveDropdown(item.label)}
+                      >
+                        <button
+                          onClick={() =>
+                            setActiveDropdown(
+                              activeDropdown === item.label ? null : item.label
+                            )
+                          }
+                          className={`flex items-center gap-1.5 sm:gap-2 h-10 sm:h-11 px-4 sm:px-5 rounded-xl text-sm sm:text-base font-medium transition-colors whitespace-nowrap ${
+                            activeDropdown === item.label
+                              ? "bg-foreground/15 text-foreground"
+                              : "text-foreground/50 hover:text-foreground hover:bg-foreground/5"
+                          }`}
+                        >
+                          {item.label}
+                          <motion.div
+                            animate={{ rotate: activeDropdown === item.label ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          </motion.div>
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* CTA */}
+                    <button
+                      onClick={() => scrollTo("contact")}
+                      className="h-10 sm:h-11 px-5 sm:px-6 rounded-xl bg-foreground text-background text-sm sm:text-base font-medium transition-opacity hover:opacity-80 whitespace-nowrap"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.nav>
+        </>
       )}
     </AnimatePresence>
   );
